@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Like STAR Nail 報價計算機</title>
+    <style>
+        :root { --primary: #d4af37; --bg: #1a1a1a; --card: #2a2a2a; --text: #eee; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; }
+        .container { max-width: 600px; margin: auto; }
+        h1 { text-align: center; color: var(--primary); font-style: italic; border-bottom: 1px solid var(--primary); padding-bottom: 10px; }
+        .section { background: var(--card); padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #333; }
+        .item-info { flex: 2; }
+        .price { color: var(--primary); font-size: 0.9em; }
+        input[type="number"] { width: 50px; background: #444; border: 1px solid var(--primary); color: white; border-radius: 5px; padding: 5px; text-align: center; }
+        .deposit-section { display: flex; gap: 10px; margin-top: 10px; }
+        .btn { background: var(--primary); color: black; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); margin-top: 5px; }
+        #summary { background: #fff; color: #333; padding: 15px; border-radius: 5px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
+        .admin-panel { display: none; margin-top: 20px; border-top: 2px dashed var(--primary); padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Like STAR Nail</h1>
+    
+    <div class="section">
+        <h3>服務項目</h3>
+        <div id="service-list"></div>
+    </div>
+
+    <div class="section">
+        <h3>訂金扣除</h3>
+        <div class="deposit-section">
+            <label><input type="radio" name="deposit" value="0" checked> 無</label>
+            <label><input type="radio" name="deposit" value="500"> $500</label>
+            <label><input type="radio" name="deposit" value="1000"> $1000</label>
+        </div>
+    </div>
+
+    <button class="btn" onclick="calculate()">生成結帳明細</button>
+    
+    <div id="summary-container" style="display:none;">
+        <div id="summary"></div>
+        <button class="btn" onclick="copyToClipboard()">複製明細內容</button>
+    </div>
+
+    <button class="btn btn-outline" onclick="toggleAdmin()">後台管理 (增減項目)</button>
+
+    <div id="admin-panel" class="admin-panel">
+        <h3>後台設定</h3>
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="new-name" placeholder="項目名稱">
+            <input type="number" id="new-price" placeholder="金額">
+            <button onclick="addItem()">新增</button>
+        </div>
+        <div id="admin-list"></div>
+    </div>
+</div>
+
+<script>
+    // 初始資料
+    let items = [
+        { name: "基礎保養", price: 600 },
+        { name: "單色凝膠", price: 800 },
+        { name: "貓眼", price: 1000 },
+        { name: "貓眼特殊吸法", price: 1200 },
+        { name: "鏡面/亮片/漸層/法式", price: 1200 },
+        { name: "足部加成", price: 200 },
+        { name: "鏡面(單指)", price: 120 },
+        { name: "手繪(單指)", price: 50 },
+        { name: "暈染(單指)", price: 100 },
+        { name: "立體造型/異材質(單指)", price: 100 },
+        { name: "配飾/鑽飾(單指)", price: 50 },
+        { name: "延甲(單指)", price: 100 },
+        { name: "本店卸甲續作/純卸", price: 300 },
+        { name: "他店卸甲續作", price: 400 },
+        { name: "他店純卸", price: 500 },
+        { name: "純卸+基礎保養", price: 800 }
+    ];
+
+    function render() {
+        const list = document.getElementById('service-list');
+        const adminList = document.getElementById('admin-list');
+        list.innerHTML = '';
+        adminList.innerHTML = '';
+
+        items.forEach((item, index) => {
+            // 前台列表
+            list.innerHTML += `
+                <div class="item-row">
+                    <div class="item-info">
+                        <div>${item.name}</div>
+                        <div class="price">$${item.price}</div>
+                    </div>
+                    <input type="number" class="qty" data-index="${index}" value="0" min="0">
+                </div>
+            `;
+            // 後台管理列表
+            adminList.innerHTML += `
+                <div class="item-row">
+                    <span>${item.name} ($${item.price})</span>
+                    <button onclick="removeItem(${index})" style="color:red;">刪除</button>
+                </div>
+            `;
+        });
+    }
+
+    function calculate() {
+        let total = 0;
+        let detailText = "✨ Like STAR Nail 結帳明細 ✨\n--------------------------\n";
+        const qtys = document.querySelectorAll('.qty');
+        
+        qtys.forEach(input => {
+            const qty = parseInt(input.value);
+            if (qty > 0) {
+                const item = items[input.dataset.index];
+                const subtotal = item.price * qty;
+                total += subtotal;
+                detailText += `${item.name} x${qty} : $${subtotal}\n`;
+            }
+        });
+
+        const deposit = parseInt(document.querySelector('input[name="deposit"]:checked').value);
+        detailText += `--------------------------\n總計金額: $${total}\n`;
+        
+        if (deposit > 0) {
+            detailText += `已付定金: -$${deposit}\n`;
+            detailText += `現場應付: $${total - deposit}\n`;
+        } else {
+            detailText += `現場應付: $${total}\n`;
+        }
+
+        detailText += "--------------------------\n期待下次為您服務！";
+        
+        document.getElementById('summary').innerText = detailText;
+        document.getElementById('summary-container').style.display = 'block';
+    }
+
+    function copyToClipboard() {
+        const text = document.getElementById('summary').innerText;
+        navigator.clipboard.writeText(text).then(() => alert('明細已複製，可直接貼給客人！'));
+    }
+
+    function toggleAdmin() {
+        const panel = document.getElementById('admin-panel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addItem() {
+        const name = document.getElementById('new-name').value;
+        const price = parseInt(document.getElementById('new-price').value);
+        if (name && price) {
+            items.push({ name, price });
+            render();
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+        }
+    }
+
+    function removeItem(index) {
+        items.splice(index, 1);
+        render();
+    }
+
+    render();
+</script>
+
+</body>
+</html>
