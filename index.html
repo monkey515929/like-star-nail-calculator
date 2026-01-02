@@ -5,69 +5,62 @@
 <title>Like STar nail｜報價計算</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #1c1c1c;
-  color: #f2f2f2;
-  padding: 16px;
+body{
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#1c1c1c;
+  color:#f2f2f2;
+  padding:16px;
 }
-h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  letter-spacing: 1px;
+h1{text-align:center;margin-bottom:16px;}
+.section{
+  background:#2a2a2a;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:16px;
 }
-.section {
-  background: #2a2a2a;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 20px;
+.section h2{
+  font-size:17px;
+  border-bottom:1px solid #444;
+  padding-bottom:6px;
+  margin-bottom:12px;
 }
-.section h2 {
-  margin-bottom: 12px;
-  font-size: 17px;
-  border-bottom: 1px solid #444;
-  padding-bottom: 6px;
+.item{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+  margin-bottom:8px;
 }
-.item {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 10px;
+.item input{
+  background:#111;
+  color:#fff;
+  border:1px solid #555;
+  border-radius:6px;
+  padding:4px 6px;
 }
-.item input[type="text"],
-.item input[type="number"] {
-  background: #111;
-  color: #fff;
-  border: 1px solid #555;
-  border-radius: 6px;
-  padding: 4px 6px;
+button{
+  background:#444;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  padding:4px 8px;
 }
-.qty {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.qty{display:flex;align-items:center;gap:6px;}
+.total{text-align:right;font-size:20px;font-weight:bold;}
+pre{
+  background:#fff;
+  color:#000;
+  border-radius:12px;
+  padding:14px;
+  white-space:pre-wrap;
 }
-button {
-  background: #444;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 8px;
+.add-box{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:8px;
 }
-button:active { opacity: .7; }
-.total {
-  text-align: right;
-  font-size: 20px;
-  font-weight: bold;
-}
-pre {
-  background: #fff;
-  color: #000;
-  border-radius: 12px;
-  padding: 14px;
-  white-space: pre-wrap;
-}
+select{background:#111;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;}
 </style>
 </head>
 <body>
@@ -79,6 +72,19 @@ pre {
 <div class="section" id="remove"><h2>卸甲服務</h2></div>
 
 <div class="section">
+  <div class="add-box">
+    <select id="newSection">
+      <option value="basic">基礎款式</option>
+      <option value="addon">單指加價</option>
+      <option value="remove">卸甲服務</option>
+    </select>
+    <input id="newName" placeholder="項目名稱">
+    <input id="newPrice" type="number" placeholder="金額">
+    <button onclick="addItem()">新增項目</button>
+  </div>
+</div>
+
+<div class="section">
   <div class="total">合計：$<span id="total">0</span></div>
 </div>
 
@@ -88,68 +94,75 @@ pre {
 </div>
 
 <script>
-let items = [
-  { section:"basic", name:"單色凝膠（10指）", price:1200, qty:0, order:1 },
-  { section:"basic", name:"貓眼", price:1500, qty:0, order:2 },
-
-  { section:"addon", name:"手繪（單指）", price:100, qty:0, order:1 },
-  { section:"addon", name:"鑽飾（單指）", price:50, qty:0, order:2 },
-
-  { section:"remove", name:"他店卸甲", price:300, qty:0, order:1 },
-  { section:"remove", name:"本店卸甲續作", price:200, qty:0, order:2 }
+let items=[
+  {id:1,section:"basic",name:"單色凝膠（10指）",price:1200,qty:0,order:1},
+  {id:2,section:"addon",name:"手繪（單指）",price:100,qty:0,order:1},
+  {id:3,section:"remove",name:"他店卸甲",price:300,qty:0,order:1}
 ];
+let uid=4;
 
-function getSection(section){
-  return items.filter(i=>i.section===section).sort((a,b)=>a.order-b.order);
+function sectionItems(sec){
+  return items.filter(i=>i.section===sec).sort((a,b)=>a.order-b.order);
 }
 
-function moveItem(item, dir){
-  const target = items.find(i=>i===item);
-  const swap = items.find(i=>i.section===item.section && i.order===item.order+dir);
-  if(!swap) return;
-  [target.order, swap.order] = [swap.order, target.order];
+function move(id,dir){
+  const item=items.find(i=>i.id===id);
+  const swap=items.find(i=>i.section===item.section && i.order===item.order+dir);
+  if(!swap)return;
+  [item.order,swap.order]=[swap.order,item.order];
+  render();
+}
+
+function changeQty(id,delta){
+  const item=items.find(i=>i.id===id);
+  item.qty=Math.max(0,item.qty+delta);
+  render();
+}
+
+function addItem(){
+  const sec=document.getElementById("newSection").value;
+  const name=document.getElementById("newName").value;
+  const price=+document.getElementById("newPrice").value;
+  if(!name||!price)return;
+  const maxOrder=Math.max(0,...items.filter(i=>i.section===sec).map(i=>i.order));
+  items.push({id:uid++,section:sec,name,price,qty:0,order:maxOrder+1});
+  document.getElementById("newName").value="";
+  document.getElementById("newPrice").value="";
   render();
 }
 
 function render(){
-  let total = 0;
-  let summary = `Like STar nail\n服務明細\n\n`;
+  let total=0;
+  let summary=`Like STar nail\n服務明細\n\n`;
 
   ["basic","addon","remove"].forEach(sec=>{
-    const box = document.getElementById(sec);
-    const title = box.querySelector("h2").innerText;
-    box.innerHTML = `<h2>${title}</h2>`;
-
-    let text = "";
-    getSection(sec).forEach(item=>{
-      total += item.price * item.qty;
-      if(item.qty>0){
-        text += `${item.name} × ${item.qty}　$${item.price*item.qty}\n`;
-      }
-
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `
-        <input type="text" value="${item.name}" onchange="item.name=this.value;render()">
-        <input type="number" value="${item.price}" onchange="item.price=+this.value;render()">
+    const box=document.getElementById(sec);
+    const title=box.querySelector("h2").innerText;
+    box.innerHTML=`<h2>${title}</h2>`;
+    let text="";
+    sectionItems(sec).forEach(i=>{
+      total+=i.price*i.qty;
+      if(i.qty>0)text+=`${i.name} × ${i.qty}　$${i.price*i.qty}\n`;
+      const d=document.createElement("div");
+      d.className="item";
+      d.innerHTML=`
+        <input value="${i.name}" onchange="items.find(x=>x.id===${i.id}).name=this.value;render()">
+        <input type="number" value="${i.price}" onchange="items.find(x=>x.id===${i.id}).price=+this.value;render()">
         <div class="qty">
-          <button onclick="item.qty=Math.max(0,item.qty-1);render()">−</button>
-          ${item.qty}
-          <button onclick="item.qty++;render()">＋</button>
+          <button onclick="changeQty(${i.id},-1)">−</button>
+          ${i.qty}
+          <button onclick="changeQty(${i.id},1)">＋</button>
         </div>
-        <button onclick="moveItem(item,-1)">⬆️</button>
-        <button onclick="moveItem(item,1)">⬇️</button>
+        <button onclick="move(${i.id},-1)">⬆️</button>
+        <button onclick="move(${i.id},1)">⬇️</button>
       `;
-      box.appendChild(div);
+      box.appendChild(d);
     });
-
-    if(text){
-      summary += `【${title}】\n${text}\n`;
-    }
+    if(text)summary+=`【${title}】\n${text}\n`;
   });
 
-  document.getElementById("total").innerText = total;
-  document.getElementById("summary").innerText = summary + `合計金額：$${total}`;
+  document.getElementById("total").innerText=total;
+  document.getElementById("summary").innerText=summary+`合計金額：$${total}`;
 }
 
 render();
