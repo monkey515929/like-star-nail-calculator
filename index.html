@@ -47,10 +47,6 @@ textarea{
 .admin-item input{
   flex:1;
 }
-.drag{
-  cursor:grab;
-  user-select:none;
-}
 .hidden{display:none;}
 .copy-btn{
   width:100%;
@@ -70,14 +66,12 @@ textarea{
 
 <button onclick="toggleAdmin()">切換 前台 / 後台</button>
 
-<!-- 前台 -->
 <div id="front"></div>
 
 <h2>✨ 給客人的明細</h2>
 <button class="copy-btn" onclick="copyReceipt()">📋 一鍵複製明細</button>
 <textarea id="receipt" readonly></textarea>
 
-<!-- 後台 -->
 <div id="admin" class="hidden">
   <h2>🔒 後台設定</h2>
   <div id="adminList"></div>
@@ -85,62 +79,82 @@ textarea{
 </div>
 
 <script>
-const STORAGE_KEY='like_star_nail_v3';
+const STORAGE_KEY='like_star_nail_final';
 
-let items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[
- {cat:'基本單色',name:'單色凝膠',price:800,qty:0},
- {cat:'加價單指',name:'鏡面(單指)',price:120,qty:0},
- {cat:'加價單指',name:'立體造型/異材質(單指)',price:100,qty:0},
- {cat:'延甲',name:'延甲(單指)',price:100,qty:0},
- {cat:'卸甲',name:'他店卸甲',price:500,qty:0},
- {cat:'扣除',name:'訂金500',price:-500,qty:0},
- {cat:'扣除',name:'訂金1000',price:-1000,qty:0}
+let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+
+  // 基礎 / 整組
+  {cat:'基礎款', name:'基礎保養', price:600, qty:0},
+  {cat:'基礎款', name:'單色凝膠', price:800, qty:0},
+  {cat:'基礎款', name:'貓眼', price:1000, qty:0},
+  {cat:'基礎款', name:'貓眼特殊吸法', price:1200, qty:0},
+  {cat:'基礎款', name:'鏡面 / 亮片 / 漸層 / 法式', price:1200, qty:0},
+  {cat:'基礎款', name:'足部加成', price:200, qty:0},
+
+  // 加價（單指）
+  {cat:'加價單指', name:'鏡面（單指）', price:120, qty:0},
+  {cat:'加價單指', name:'手繪（單指）', price:50, qty:0},
+  {cat:'加價單指', name:'暈染（單指）', price:100, qty:0},
+  {cat:'加價單指', name:'立體造型 / 異材質（單指）', price:100, qty:0},
+  {cat:'加價單指', name:'配飾 / 鑽飾（單指）', price:50, qty:0},
+  {cat:'加價單指', name:'延甲（單指）', price:100, qty:0},
+
+  // 卸甲
+  {cat:'卸甲', name:'本店卸甲續作 / 純卸', price:300, qty:0},
+  {cat:'卸甲', name:'他店卸甲續作', price:400, qty:0},
+  {cat:'卸甲', name:'他店純卸', price:500, qty:0},
+  {cat:'卸甲', name:'純卸 + 基礎保養', price:800, qty:0},
+
+  // 扣除
+  {cat:'扣除', name:'訂金500', price:-500, qty:0},
+  {cat:'扣除', name:'訂金1000', price:-1000, qty:0}
 ];
 
 function save(){
- localStorage.setItem(STORAGE_KEY,JSON.stringify(items));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
 function renderFront(){
- const front=document.getElementById('front');
- front.innerHTML='';
- [...new Set(items.map(i=>i.cat))].forEach(cat=>{
-  const sec=document.createElement('div');
-  sec.className='section';
-  sec.innerHTML=`<h2>${cat}</h2>`;
-  items.filter(i=>i.cat===cat).forEach(i=>{
-   const row=document.createElement('div');
-   row.className='item';
-   row.innerHTML=`
-    <div>${i.name} $${i.price}</div>
-    <div class="ctrl">
-      <button onclick="qty('${i.name}',-1)">−</button>
-      <div>${i.qty}</div>
-      <button onclick="qty('${i.name}',1)">＋</button>
-    </div>`;
-   sec.appendChild(row);
+  const front=document.getElementById('front');
+  front.innerHTML='';
+  [...new Set(items.map(i=>i.cat))].forEach(cat=>{
+    const sec=document.createElement('div');
+    sec.className='section';
+    sec.innerHTML=`<h2>${cat}</h2>`;
+    items.filter(i=>i.cat===cat).forEach(i=>{
+      const row=document.createElement('div');
+      row.className='item';
+      row.innerHTML=`
+        <div>${i.name} $${i.price}</div>
+        <div class="ctrl">
+          <button onclick="qty('${i.name}',-1)">−</button>
+          <div>${i.qty}</div>
+          <button onclick="qty('${i.name}',1)">＋</button>
+        </div>`;
+      sec.appendChild(row);
+    });
+    front.appendChild(sec);
   });
-  front.appendChild(sec);
- });
 }
 
 function qty(name,d){
- const it=items.find(i=>i.name===name);
- it.qty=Math.max(0,it.qty+d);
- save(); render();
+  const it=items.find(i=>i.name===name);
+  it.qty=Math.max(0,it.qty+d);
+  save(); render();
 }
 
 function renderReceipt(){
- let lines=[],total=0,deposit=0;
- items.forEach(i=>{
-  if(i.qty>0){
-   const sum=i.price*i.qty;
-   if(i.price<0) deposit+=sum;
-   else total+=sum;
-   lines.push(`${i.name} x${i.qty} : $${sum}`);
-  }
- });
- document.getElementById('receipt').value=
+  let lines=[], total=0, deposit=0;
+  items.forEach(i=>{
+    if(i.qty>0){
+      const sum=i.price*i.qty;
+      if(i.price<0) deposit+=sum;
+      else total+=sum;
+      lines.push(`${i.name} x${i.qty} : $${sum}`);
+    }
+  });
+
+  document.getElementById('receipt').value =
 `✨ Like STar Nail 結帳明細 ✨
 --------------------------
 ${lines.join('\n')}
@@ -153,40 +167,38 @@ ${lines.join('\n')}
 }
 
 function copyReceipt(){
- const text=document.getElementById('receipt').value;
- navigator.clipboard.writeText(text).then(()=>{
-  alert('明細已複製，可直接貼給客人');
- });
+  navigator.clipboard.writeText(
+    document.getElementById('receipt').value
+  ).then(()=>alert('明細已複製，可直接貼給客人'));
 }
 
 function renderAdmin(){
- const list=document.getElementById('adminList');
- list.innerHTML='';
- items.forEach((i,idx)=>{
-  const row=document.createElement('div');
-  row.className='admin-item';
-  row.innerHTML=`
-   <span class="drag">☰</span>
-   <input value="${i.name}" onchange="items[${idx}].name=this.value;save();render()">
-   <input type="number" value="${i.price}" onchange="items[${idx}].price=+this.value;save();render()">
-   <input value="${i.cat}" onchange="items[${idx}].cat=this.value;save();render()">`;
-  list.appendChild(row);
- });
+  const list=document.getElementById('adminList');
+  list.innerHTML='';
+  items.forEach((i,idx)=>{
+    const row=document.createElement('div');
+    row.className='admin-item';
+    row.innerHTML=`
+      <input value="${i.name}" onchange="items[${idx}].name=this.value;save();render()">
+      <input type="number" value="${i.price}" onchange="items[${idx}].price=+this.value;save();render()">
+      <input value="${i.cat}" onchange="items[${idx}].cat=this.value;save();render()">`;
+    list.appendChild(row);
+  });
 }
 
 function addItem(){
- items.push({cat:'自訂',name:'新項目',price:0,qty:0});
- save(); render();
+  items.push({cat:'自訂', name:'新項目', price:0, qty:0});
+  save(); render();
 }
 
 function toggleAdmin(){
- document.getElementById('admin').classList.toggle('hidden');
+  document.getElementById('admin').classList.toggle('hidden');
 }
 
 function render(){
- renderFront();
- renderAdmin();
- renderReceipt();
+  renderFront();
+  renderAdmin();
+  renderReceipt();
 }
 
 render();
