@@ -9,13 +9,12 @@
 body{
   font-family:-apple-system,BlinkMacSystemFont;
   background:#f6f4f2;
-  padding:20px;
+  padding:18px;
 }
-h1{text-align:center;margin:5px 0 15px}
+h1{text-align:center;margin:8px 0 14px}
 .topbar{
   display:flex;
-  justify-content:space-between;
-  align-items:center;
+  justify-content:flex-end;
 }
 button{
   border:none;
@@ -25,8 +24,8 @@ button{
 .section{
   background:#fff;
   border-radius:16px;
-  padding:15px;
-  margin-bottom:18px;
+  padding:14px;
+  margin-bottom:16px;
 }
 .item{
   display:flex;
@@ -34,8 +33,14 @@ button{
   gap:6px;
   margin-bottom:8px;
 }
+.drag{
+  cursor:grab;
+  font-size:18px;
+  padding:0 4px;
+  opacity:.5;
+}
 .name{flex:2}
-.price{font-size:13px;opacity:.7}
+.price{font-size:12px;opacity:.6}
 .qty{
   display:flex;
   align-items:center;
@@ -48,35 +53,44 @@ button{
   color:#fff;
 }
 .backend{
-  background:#f0f0f0;
-  padding:8px;
+  background:#f1f1f1;
   border-radius:10px;
+  padding:6px;
   margin-top:6px;
 }
 .backend input{
   width:100%;
   margin-bottom:4px;
 }
+.hidden{display:none}
 .total{
   font-size:18px;
   text-align:right;
   font-weight:bold;
 }
-textarea{width:100%;height:90px}
-.hidden{display:none}
+.summary{
+  font-size:14px;
+  line-height:1.5;
+  white-space:pre-line;
+}
+textarea{width:100%;height:80px}
 </style>
 </head>
 
 <body>
 
 <div class="topbar">
-  <div></div>
-  <button onclick="toggleBackend()">⚙️ 後台管理</button>
+  <button onclick="toggleBackend()">⚙️ 後台</button>
 </div>
 
 <h1>Like STar nail</h1>
 
 <div id="app"></div>
+
+<div class="section">
+  <h3>🧾 明細（給客人）</h3>
+  <div id="summary" class="summary"></div>
+</div>
 
 <div class="section">
   <h3>訂金</h3>
@@ -131,10 +145,12 @@ function render(){
   box.innerHTML=`<h3>${sec.title}</h3>`;
   const list=document.createElement('div');
   list.id='list'+s;
+
   sec.items.forEach((it,i)=>{
     const row=document.createElement('div');
     row.className='item';
     row.innerHTML=`
+      <div class="drag">≡</div>
       <div class="name">${it.name}<div class="price">$${it.price}</div></div>
       <div class="qty">
         <button onclick="chg(${s},${i},-1)">−</button>
@@ -149,14 +165,28 @@ function render(){
     `;
     list.appendChild(row);
   });
+
   box.appendChild(list);
+
   if(showBackend){
     const add=document.createElement('button');
     add.textContent='＋新增項目';
     add.onclick=()=>addItem(s);
     box.appendChild(add);
-    new Sortable(list,{animation:150});
+
+    new Sortable(list,{
+      animation:150,
+      handle:'.drag',
+      delay:150,
+      delayOnTouchOnly:true,
+      onEnd:e=>{
+        const moved=sec.items.splice(e.oldIndex,1)[0];
+        sec.items.splice(e.newIndex,0,moved);
+        render();
+      }
+    });
   }
+
   app.appendChild(box);
  });
  calc();
@@ -164,9 +194,10 @@ function render(){
 
 function chg(s,i,v){
  data[s].items[i].qty=Math.max(0,data[s].items[i].qty+v);
+ calc();
  render();
 }
-function itName(s,i,v){data[s].items[i].name=v}
+function itName(s,i,v){data[s].items[i].name=v;calc()}
 function itPrice(s,i,v){data[s].items[i].price=+v;calc()}
 function del(s,i){data[s].items.splice(i,1);render()}
 function addItem(s){
@@ -179,20 +210,28 @@ function toggleBackend(){
 }
 function calc(){
  let sum=0;
- data.forEach(sec=>sec.items.forEach(it=>sum+=it.price*it.qty));
+ let summary='';
+ data.forEach(sec=>{
+  sec.items.forEach(it=>{
+    if(it.qty>0){
+      const sub=it.price*it.qty;
+      sum+=sub;
+      summary+=`${it.name} x${it.qty}　$${sub}\n`;
+    }
+  });
+ });
+ if(deposit>0) summary+=`訂金扣除：-$${deposit}\n`;
+ document.getElementById('summary').innerText=summary||'尚未選擇項目';
  document.getElementById('total').innerText=sum-deposit;
 }
 function setDeposit(v){deposit=v;calc()}
 function copyLine(){
  let t='Like STar nail 美甲明細\n';
- data.forEach(sec=>sec.items.forEach(it=>{
-  if(it.qty>0)t+=`${it.name} x${it.qty} $${it.price*it.qty}\n`;
- }));
- if(deposit>0)t+=`訂金扣除：$${deposit}\n`;
+ t+=document.getElementById('summary').innerText+'\n';
  t+=`總金額：$${document.getElementById('total').innerText}\n`;
  t+=`備註：${note.value}`;
  navigator.clipboard.writeText(t);
- alert('已複製');
+ alert('已複製，可直接貼 LINE');
 }
 
 render();
