@@ -11,32 +11,62 @@ body{
   background:#f6f4f2;
   padding:20px;
 }
-h1{text-align:center}
+h1{text-align:center;margin-bottom:10px}
 .section{
   background:#fff;
-  border-radius:14px;
+  border-radius:16px;
   padding:15px;
-  margin-bottom:20px;
+  margin-bottom:18px;
 }
-.section h2{font-size:16px}
+.section h2{
+  font-size:16px;
+  margin-bottom:10px;
+}
 .item{
   display:flex;
+  align-items:center;
   gap:6px;
-  margin-bottom:6px;
+  margin-bottom:8px;
 }
-.item input{
-  flex:1;
-  padding:6px;
+.name{flex:2}
+.price{width:70px;text-align:right}
+.qty{
+  display:flex;
+  align-items:center;
+  gap:6px;
 }
-.item button{
+.qty button{
+  width:28px;height:28px;
   border:none;
-  border-radius:6px;
+  border-radius:50%;
+  background:#000;
+  color:#fff;
 }
+.qty span{min-width:18px;text-align:center}
 .total{
   font-size:18px;
   text-align:right;
+  font-weight:bold;
 }
-textarea{width:100%;height:80px}
+textarea{
+  width:100%;
+  height:90px;
+  margin-top:6px;
+}
+button.main{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#000;
+  color:#fff;
+  margin-top:8px;
+}
+.backend{
+  opacity:.6;
+  font-size:13px;
+}
+.backend input{width:100%}
 </style>
 </head>
 
@@ -44,106 +74,122 @@ textarea{width:100%;height:80px}
 
 <h1>Like STar nail</h1>
 
+<div id="app"></div>
+
 <div class="section">
-<h2>基本款 / 套餐</h2>
-<div id="basic"></div>
-<button onclick="addItem('basic')">＋新增項目</button>
+  <h2>訂金</h2>
+  <button class="main" onclick="setDeposit(0)">不扣訂金</button>
+  <button class="main" onclick="setDeposit(500)">扣訂金 500</button>
+  <button class="main" onclick="setDeposit(1000)">扣訂金 1000</button>
 </div>
 
 <div class="section">
-<h2>加價單指</h2>
-<div id="design"></div>
-<button onclick="addItem('design')">＋新增項目</button>
-</div>
-
-<div class="section">
-<h2>卸甲</h2>
-<div id="remove"></div>
-<button onclick="addItem('remove')">＋新增項目</button>
-</div>
-
-<div class="section">
-<h2>調整</h2>
-<button onclick="applyDeposit(500)">扣訂金 500</button>
-<button onclick="applyDeposit(1000)">扣訂金 1000</button>
-<button onclick="applyDiscount()">扣除基本單色</button>
-</div>
-
-<div class="section">
-<h2>備註 / 傳 LINE 給客人</h2>
-<textarea id="note"></textarea>
-<button onclick="copyLine()">複製明細</button>
+  <h2>備註 / 傳 LINE 給客人</h2>
+  <textarea id="note"></textarea>
+  <button class="main" onclick="copyLine()">複製明細</button>
 </div>
 
 <div class="section total">
-總金額：$<span id="total">0</span>
+  總金額：$<span id="total">0</span>
 </div>
 
 <script>
-let deposit=0,discount=0;
-const sections=['basic','design','remove'];
-sections.forEach(id=>{
-  new Sortable(document.getElementById(id),{animation:150});
-});
+let deposit=0;
 
-function addItem(section,name='',price=0){
-  const d=document.createElement('div');
-  d.className='item';
-  d.innerHTML=`
-    <input value="${name}">
-    <input type="number" value="${price}" oninput="calc()">
-    <input type="number" value="1" min="1" oninput="calc()">
-    <button onclick="this.parentNode.remove();calc()">✕</button>
-  `;
-  document.getElementById(section).appendChild(d);
+const data=[
+{
+ title:'基本款 / 套餐',
+ items:[
+  {name:'單色凝膠（跳色+100/色）',price:800,qty:0},
+  {name:'貓眼（跳色+100/色）',price:1000,qty:0},
+  {name:'貓眼特殊吸法（玻璃珠、追光、法式等）',price:1200,qty:0},
+  {name:'鏡面、亮片、漸層、法式（足部+200）',price:1200,qty:0},
+ ]
+},
+{
+ title:'加價單指',
+ items:[
+  {name:'鏡面',price:120,qty:0},
+  {name:'手繪',price:50,qty:0},
+  {name:'量染',price:100,qty:0},
+  {name:'立體造型、異材質',price:100,qty:0},
+  {name:'配飾、鑽飾',price:50,qty:0},
+  {name:'延甲',price:100,qty:0},
+ ]
+},
+{
+ title:'卸甲',
+ items:[
+  {name:'本店卸甲續作、純卸',price:300,qty:0},
+  {name:'他店卸甲續作',price:400,qty:0},
+  {name:'他店純卸',price:500,qty:0},
+  {name:'純卸＋基礎保養',price:800,qty:0},
+ ]
+}
+];
+
+function render(){
+ const app=document.getElementById('app');
+ app.innerHTML='';
+ data.forEach((sec,s)=>{
+  const box=document.createElement('div');
+  box.className='section';
+  box.innerHTML=`<h2>${sec.title}</h2>`;
+  sec.items.forEach((it,i)=>{
+    const row=document.createElement('div');
+    row.className='item';
+    row.innerHTML=`
+      <div class="name">${it.name}<br><small>$${it.price}</small></div>
+      <div class="qty">
+        <button onclick="chg(${s},${i},-1)">−</button>
+        <span>${it.qty}</span>
+        <button onclick="chg(${s},${i},1)">＋</button>
+      </div>
+    `;
+    box.appendChild(row);
+  });
+  app.appendChild(box);
+ });
+ calc();
+}
+
+function chg(s,i,v){
+ data[s].items[i].qty=Math.max(0,data[s].items[i].qty+v);
+ render();
 }
 
 function calc(){
-  let sum=0;
-  document.querySelectorAll('.item').forEach(i=>{
-    sum+= (i.children[1].value||0)*(i.children[2].value||1);
+ let sum=0;
+ data.forEach(sec=>{
+  sec.items.forEach(it=>{
+    sum+=it.price*it.qty;
   });
-  document.getElementById('total').innerText=sum-discount-deposit;
+ });
+ document.getElementById('total').innerText=sum-deposit;
 }
 
-function applyDeposit(v){deposit=v;calc()}
-function applyDiscount(){
-  const first=document.querySelector('#basic .item input[type=number]');
-  discount=first?first.value:0;
-  calc();
+function setDeposit(v){
+ deposit=v;
+ calc();
 }
 
 function copyLine(){
-  let t='Like STar nail 美甲明細\n';
-  document.querySelectorAll('.item').forEach(i=>{
-    if(i.children[0].value)
-      t+=`${i.children[0].value} x${i.children[2].value} $${i.children[1].value*i.children[2].value}\n`;
+ let t='Like STar nail 美甲明細\n';
+ data.forEach(sec=>{
+  sec.items.forEach(it=>{
+    if(it.qty>0){
+      t+=`${it.name} x${it.qty} $${it.price*it.qty}\n`;
+    }
   });
-  t+=`訂金扣除：$${deposit}\n`;
-  t+=`折扣：$${discount}\n`;
-  t+=`總金額：$${document.getElementById('total').innerText}\n`;
-  t+=`備註：${note.value}`;
-  navigator.clipboard.writeText(t);
-  alert('已複製，可直接貼 LINE');
+ });
+ if(deposit>0)t+=`訂金扣除：$${deposit}\n`;
+ t+=`總金額：$${document.getElementById('total').innerText}\n`;
+ t+=`備註：${note.value}`;
+ navigator.clipboard.writeText(t);
+ alert('已複製，可直接貼 LINE');
 }
 
-/* 預設項目 */
-addItem('basic','單色凝膠（跳色+100/色）',800);
-addItem('basic','貓眼（跳色+100/色）',1000);
-addItem('basic','貓眼特殊吸法（玻璃珠、追光、法式等）',1200);
-addItem('basic','鏡面、亮片、漸層、法式（足部+200）',1200);
-
-addItem('design','鏡面',120);
-addItem('design','手繪',50);
-addItem('design','量染',100);
-addItem('design','立體造型、異材質',100);
-addItem('design','配飾、鑽飾',50);
-addItem('design','延甲',100);
-
-addItem('remove','本店卸甲續作、純卸',300);
-addItem('remove','他店卸甲續作',400);
-addItem('remove','他店純卸',500);
-addItem('remove','純卸＋基礎保養',800);
+render();
 </script>
 
 </body>
