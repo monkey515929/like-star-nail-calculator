@@ -80,11 +80,12 @@ pre{white-space:pre-wrap;line-height:1.6;}
   <h3>後台管理（你自己用）</h3>
 
   <input id="newName" placeholder="項目名稱">
-  <input id="newPrice" type="number" placeholder="金額">
+  <input id="newPrice" type="number" placeholder="金額（扣除請填負數）">
   <select id="newGroup">
     <option value="基礎款">基礎款</option>
     <option value="單指加價">單指加價</option>
     <option value="卸甲">卸甲</option>
+    <option value="扣除項目">扣除項目</option>
   </select>
   <button onclick="addItem()">新增項目</button>
 
@@ -104,7 +105,9 @@ let items = [
   {name:"延甲",price:100,group:"單指加價",qty:0},
 
   {name:"本店卸甲續作",price:300,group:"卸甲",qty:0},
-  {name:"他店卸甲續作",price:400,group:"卸甲",qty:0}
+  {name:"他店卸甲續作",price:400,group:"卸甲",qty:0},
+
+  {name:"扣除基本單色",price:-800,group:"扣除項目",qty:0}
 ];
 
 function render(){
@@ -115,14 +118,14 @@ function render(){
   let total=0;
   let text="Like STar nail 消費明細\n\n";
 
-  ["基礎款","單指加價","卸甲"].forEach(g=>{
+  ["基礎款","單指加價","卸甲","扣除項目"].forEach(g=>{
     app.innerHTML+=`<div class="section"><h3>${g}</h3></div>`;
     const sec=app.lastChild;
 
     items.filter(i=>i.group===g).forEach((i,idx)=>{
       sec.innerHTML+=`
       <div class="item">
-        <span class="name">${i.name} ($${i.price})</span>
+        <span class="name">${i.name} (${i.price>0?"$"+i.price:"-$"+Math.abs(i.price)})</span>
         <button onclick="iQty(${idx},-1)">-</button>
         <span class="qty">${i.qty}</span>
         <button onclick="iQty(${idx},1)">+</button>
