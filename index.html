@@ -52,6 +52,16 @@ textarea{
   user-select:none;
 }
 .hidden{display:none;}
+.copy-btn{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#000;
+  color:#fff;
+  font-size:16px;
+  margin-bottom:10px;
+}
 </style>
 </head>
 <body>
@@ -63,11 +73,9 @@ textarea{
 <!-- 前台 -->
 <div id="front"></div>
 
-<h2>✨ 給客人的明細（可複製）</h2>
+<h2>✨ 給客人的明細</h2>
+<button class="copy-btn" onclick="copyReceipt()">📋 一鍵複製明細</button>
 <textarea id="receipt" readonly></textarea>
-
-<h2>✍ 備註</h2>
-<textarea id="note" placeholder="可貼 LINE 給客人"></textarea>
 
 <!-- 後台 -->
 <div id="admin" class="hidden">
@@ -77,7 +85,7 @@ textarea{
 </div>
 
 <script>
-const STORAGE_KEY='like_star_nail_v2';
+const STORAGE_KEY='like_star_nail_v3';
 
 let items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[
  {cat:'基本單色',name:'單色凝膠',price:800,qty:0},
@@ -144,13 +152,19 @@ ${lines.join('\n')}
 期待下次為您服務！`;
 }
 
+function copyReceipt(){
+ const text=document.getElementById('receipt').value;
+ navigator.clipboard.writeText(text).then(()=>{
+  alert('明細已複製，可直接貼給客人');
+ });
+}
+
 function renderAdmin(){
  const list=document.getElementById('adminList');
  list.innerHTML='';
  items.forEach((i,idx)=>{
   const row=document.createElement('div');
   row.className='admin-item';
-  row.draggable=true;
   row.innerHTML=`
    <span class="drag">☰</span>
    <input value="${i.name}" onchange="items[${idx}].name=this.value;save();render()">
