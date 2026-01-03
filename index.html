@@ -45,14 +45,23 @@ select,textarea,input{
   border:none;
 }
 pre{white-space:pre-wrap;line-height:1.6;}
+
 .admin-item{
   background:#111;
-  padding:8px;
-  border-radius:8px;
-  margin-bottom:6px;
-  cursor:grab;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:8px;
+  touch-action:none;
 }
-.admin-item.dragging{opacity:.4}
+.admin-item.dragging{
+  opacity:.5;
+  background:#222;
+}
+.admin-item .row{
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
 .small{font-size:13px;opacity:.7}
 </style>
 </head>
@@ -74,7 +83,7 @@ pre{white-space:pre-wrap;line-height:1.6;}
 
 <div class="section">
   <h3>備註（給客人）</h3>
-  <textarea id="note" placeholder="保固 / 注意事項 / 下次預約"></textarea>
+  <textarea id="note"></textarea>
 </div>
 
 <div class="section">
@@ -84,7 +93,7 @@ pre{white-space:pre-wrap;line-height:1.6;}
 </div>
 
 <div class="section">
-  <h3>後台管理（拖移排序）</h3>
+  <h3>後台管理（長按拖移排序）</h3>
 
   <input id="newName" placeholder="項目名稱">
   <input id="newPrice" type="number" placeholder="金額（扣除請填負數）">
@@ -105,23 +114,20 @@ let items=[
   {name:"貓眼",price:1000,group:"基礎款",qty:0},
   {name:"貓眼特殊吸法",price:1200,group:"基礎款",qty:0},
   {name:"鏡面／亮片／漸層／法式",price:1200,group:"基礎款",qty:0},
-
   {name:"手繪",price:100,group:"單指加價",qty:0},
   {name:"暈染",price:100,group:"單指加價",qty:0},
   {name:"立體造型／異材質",price:100,group:"單指加價",qty:0},
   {name:"延甲",price:100,group:"單指加價",qty:0},
-
   {name:"本店卸甲續作",price:300,group:"卸甲",qty:0},
   {name:"他店卸甲續作",price:400,group:"卸甲",qty:0},
-
   {name:"扣除基本單色",price:-800,group:"扣除項目",qty:0}
 ];
 
+let dragIndex=null;
+
 function render(){
-  const app=document.getElementById("app");
-  const admin=document.getElementById("adminList");
   app.innerHTML="";
-  admin.innerHTML="";
+  adminList.innerHTML="";
   let total=0;
   let text="Like STar nail 消費明細\n\n";
 
@@ -129,7 +135,7 @@ function render(){
     app.innerHTML+=`<div class="section"><h3>${g}</h3></div>`;
     const sec=app.lastChild;
 
-    items.filter(i=>i.group===g).forEach((i)=>{
+    items.filter(i=>i.group===g).forEach(i=>{
       sec.innerHTML+=`
       <div class="item">
         <span class="name">${i.name} (${i.price>0?"$"+i.price:"-$"+Math.abs(i.price)})</span>
@@ -144,23 +150,34 @@ function render(){
     });
   });
 
-  const dep=+deposit.value;
-  if(dep){ total-=dep; text+=`\n已扣訂金 -$${dep}\n`; }
-
+  if(+deposit.value){
+    total-=+deposit.value;
+    text+=`\n已扣訂金 -$${deposit.value}\n`;
+  }
   if(note.value.trim()) text+=`\n備註：\n${note.value}\n`;
   text+=`\n應付金額：$${total}`;
   detail.innerText=text;
 
   items.forEach((i,idx)=>{
-    admin.innerHTML+=`
-    <div class="admin-item" draggable="true" data-i="${idx}">
-      <input value="${i.name}" onchange="i.name=this.value">
-      <input type="number" value="${i.price}" onchange="i.price=this.value">
-      <span class="small">${i.group}</span>
-    </div>`;
+    const el=document.createElement("div");
+    el.className="admin-item";
+    el.innerHTML=`
+      <div class="row">
+        <input value="${i.name}" onchange="i.name=this.value">
+        <input type="number" value="${i.price}" onchange="i.price=this.value">
+        <span class="small">${i.group}</span>
+      </div>`;
+    el.onpointerdown=()=>{dragIndex=idx;el.classList.add("dragging");}
+    el.onpointerup=()=>{dragIndex=null;el.classList.remove("dragging");}
+    el.onpointerenter=()=>{
+      if(dragIndex!==null && dragIndex!==idx){
+        items.splice(idx,0,items.splice(dragIndex,1)[0]);
+        dragIndex=idx;
+        render();
+      }
+    }
+    adminList.appendChild(el);
   });
-
-  dragInit();
 }
 
 function chg(name,n){
@@ -168,36 +185,14 @@ function chg(name,n){
   i.qty=Math.max(0,i.qty+n);
   render();
 }
-
 function addItem(){
-  items.push({
-    name:newName.value,
-    price:+newPrice.value,
-    group:newGroup.value,
-    qty:0
-  });
+  items.push({name:newName.value,price:+newPrice.value,group:newGroup.value,qty:0});
   newName.value=newPrice.value="";
   render();
 }
-
-function dragInit(){
-  let drag;
-  document.querySelectorAll(".admin-item").forEach(el=>{
-    el.ondragstart=()=>{drag=el;el.classList.add("dragging");}
-    el.ondragend=()=>el.classList.remove("dragging");
-    el.ondragover=e=>e.preventDefault();
-    el.ondrop=()=>{
-      const a=+drag.dataset.i,b=+el.dataset.i;
-      items.splice(b,0,items.splice(a,1)[0]);
-      render();
-    }
-  });
-}
-
 function sendLine(){
   window.open("https://line.me/R/msg/text/?"+encodeURIComponent(detail.innerText));
 }
-
 render();
 </script>
 
