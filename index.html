@@ -1,189 +1,248 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>Like STar nail｜報價計算</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body{
-  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
-  background:#1c1c1c;
-  color:#f2f2f2;
-  padding:16px;
-}
-h1{text-align:center;margin-bottom:16px;}
-.section{
-  background:#2a2a2a;
-  border-radius:14px;
-  padding:16px;
-  margin-bottom:16px;
-}
-.section h2{
-  font-size:17px;
-  border-bottom:1px solid #444;
-  padding-bottom:6px;
-  margin-bottom:12px;
-}
-.item{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-  align-items:center;
-  margin-bottom:8px;
-}
-.item input{
-  background:#111;
-  color:#fff;
-  border:1px solid #555;
-  border-radius:6px;
-  padding:4px 6px;
-}
-button{
-  background:#444;
-  color:#fff;
-  border:none;
-  border-radius:6px;
-  padding:4px 8px;
-}
-.qty{display:flex;align-items:center;gap:6px;}
-.total{text-align:right;font-size:20px;font-weight:bold;}
-pre{
-  background:#fff;
-  color:#000;
-  border-radius:12px;
-  padding:14px;
-  white-space:pre-wrap;
-}
-.add-box{
-  display:flex;
-  gap:6px;
-  flex-wrap:wrap;
-  margin-top:8px;
-}
-select{
-  background:#111;
-  color:#fff;
-  border:1px solid #555;
-  border-radius:6px;
-  padding:4px;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Like STar nail 計算機</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif;
+      background: #0f0f0f;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border-radius: 12px;
+      background: #1a1a1a;
+    }
+    .section h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+      border-left: 4px solid #cfae70;
+      padding-left: 8px;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 6px;
+    }
+    .item span {
+      flex: 1;
+    }
+    button {
+      background: #cfae70;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 16px;
+    }
+    .qty {
+      width: 32px;
+      text-align: center;
+    }
+    select, textarea {
+      width: 100%;
+      border-radius: 6px;
+      padding: 6px;
+      border: none;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 60px;
+    }
+    pre {
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .total {
+      font-size: 20px;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
 </head>
+
 <body>
 
 <h1>Like STar nail</h1>
 
-<div class="section" id="basic"><h2>基礎款式</h2></div>
-<div class="section" id="addon"><h2>單指加價</h2></div>
-<div class="section" id="remove"><h2>卸甲服務</h2></div>
-
+<!-- 基礎款 -->
 <div class="section">
-  <div class="add-box">
-    <select id="newSection">
-      <option value="basic">基礎款式</option>
-      <option value="addon">單指加價</option>
-      <option value="remove">卸甲服務</option>
-    </select>
-    <input id="newName" placeholder="項目名稱">
-    <input id="newPrice" type="number" placeholder="金額">
-    <button onclick="addItem()">新增項目</button>
+  <h3>基礎款</h3>
+
+  <div class="item">
+    <span>單色凝膠</span>
+    <button onclick="changeQty(0,-1)">-</button>
+    <span id="q0" class="qty">0</span>
+    <button onclick="changeQty(0,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>貓眼</span>
+    <button onclick="changeQty(1,-1)">-</button>
+    <span id="q1" class="qty">0</span>
+    <button onclick="changeQty(1,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>貓眼特殊吸法</span>
+    <button onclick="changeQty(2,-1)">-</button>
+    <span id="q2" class="qty">0</span>
+    <button onclick="changeQty(2,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>鏡面／亮片／漸層／法式</span>
+    <button onclick="changeQty(3,-1)">-</button>
+    <span id="q3" class="qty">0</span>
+    <button onclick="changeQty(3,1)">+</button>
   </div>
 </div>
 
+<!-- 單指加價 -->
 <div class="section">
-  <div class="total">合計：$<span id="total">0</span></div>
+  <h3>單指加價</h3>
+
+  <div class="item">
+    <span>手繪</span>
+    <button onclick="changeQty(4,-1)">-</button>
+    <span id="q4" class="qty">0</span>
+    <button onclick="changeQty(4,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>暈染</span>
+    <button onclick="changeQty(5,-1)">-</button>
+    <span id="q5" class="qty">0</span>
+    <button onclick="changeQty(5,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>立體造型／異材質</span>
+    <button onclick="changeQty(6,-1)">-</button>
+    <span id="q6" class="qty">0</span>
+    <button onclick="changeQty(6,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>延甲</span>
+    <button onclick="changeQty(7,-1)">-</button>
+    <span id="q7" class="qty">0</span>
+    <button onclick="changeQty(7,1)">+</button>
+  </div>
+</div>
+
+<!-- 卸甲 -->
+<div class="section">
+  <h3>卸甲</h3>
+
+  <div class="item">
+    <span>本店卸甲續作</span>
+    <button onclick="changeQty(8,-1)">-</button>
+    <span id="q8" class="qty">0</span>
+    <button onclick="changeQty(8,1)">+</button>
+  </div>
+
+  <div class="item">
+    <span>他店卸甲續作</span>
+    <button onclick="changeQty(9,-1)">-</button>
+    <span id="q9" class="qty">0</span>
+    <button onclick="changeQty(9,1)">+</button>
+  </div>
+</div>
+
+<!-- 訂金 -->
+<div class="section">
+  <h3>訂金扣除</h3>
+  <select id="deposit" onchange="calculate()">
+    <option value="0">不扣訂金</option>
+    <option value="500">已收訂金 $500</option>
+    <option value="1000">已收訂金 $1000</option>
+  </select>
+</div>
+
+<!-- 備註 -->
+<div class="section">
+  <h3>備註</h3>
+  <textarea id="note" placeholder="保固 / 下次預約 / 注意事項"></textarea>
+</div>
+
+<!-- 明細 -->
+<div class="section">
+  <h3>明細</h3>
+  <pre id="detail"></pre>
+  <div class="total">總金額：<span id="total">$0</span></div>
 </div>
 
 <div class="section">
-  <h2>給客人的服務明細</h2>
-  <pre id="summary"></pre>
+  <button onclick="sendLine()">傳 LINE 給客人</button>
 </div>
 
 <script>
-let items=[
-  // 基礎款式
-  {id:1,section:"basic",name:"單色凝膠（跳色+100/色）",price:800,qty:0,order:1},
-  {id:2,section:"basic",name:"貓眼（跳色+100/色）",price:1000,qty:0,order:2},
-  {id:3,section:"basic",name:"貓眼特殊吸法（玻璃珠、追光、法式等）",price:1200,qty:0,order:3},
-  {id:4,section:"basic",name:"鏡面／亮片／漸層／法式",price:1200,qty:0,order:4},
-  {id:5,section:"basic",name:"足部加成",price:200,qty:0,order:5},
-
-  // 單指加價
-  {id:6,section:"addon",name:"鏡面（單指）",price:120,qty:0,order:1},
-  {id:7,section:"addon",name:"手繪（單指）",price:50,qty:0,order:2},
-  {id:8,section:"addon",name:"暈染（單指）",price:100,qty:0,order:3},
-  {id:9,section:"addon",name:"立體造型／異材質（單指）",price:100,qty:0,order:4},
-  {id:10,section:"addon",name:"配飾／鑽飾（單指）",price:50,qty:0,order:5},
-  {id:11,section:"addon",name:"延甲（單指）",price:100,qty:0,order:6},
-
-  // 卸甲
-  {id:12,section:"remove",name:"本店卸甲續作／純卸",price:300,qty:0,order:1},
-  {id:13,section:"remove",name:"他店卸甲續作",price:400,qty:0,order:2},
-  {id:14,section:"remove",name:"他店純卸",price:500,qty:0,order:3},
-  {id:15,section:"remove",name:"純卸＋基礎保養",price:800,qty:0,order:4}
+const items = [
+  ["單色凝膠",800],
+  ["貓眼",1000],
+  ["貓眼特殊吸法",1200],
+  ["鏡面／亮片／漸層／法式",1200],
+  ["手繪",100],
+  ["暈染",100],
+  ["立體造型／異材質",100],
+  ["延甲",100],
+  ["本店卸甲續作",300],
+  ["他店卸甲續作",400]
 ];
-let uid=16;
 
-/* 以下邏輯與前一版一致（可調數量／順序／新增） */
-function sectionItems(sec){
-  return items.filter(i=>i.section===sec).sort((a,b)=>a.order-b.order);
+const qty = Array(items.length).fill(0);
+
+function changeQty(i, n) {
+  qty[i] = Math.max(0, qty[i] + n);
+  document.getElementById("q"+i).innerText = qty[i];
+  calculate();
 }
-function move(id,dir){
-  const item=items.find(i=>i.id===id);
-  const swap=items.find(i=>i.section===item.section && i.order===item.order+dir);
-  if(!swap)return;
-  [item.order,swap.order]=[swap.order,item.order];
-  render();
-}
-function changeQty(id,delta){
-  const item=items.find(i=>i.id===id);
-  item.qty=Math.max(0,item.qty+delta);
-  render();
-}
-function addItem(){
-  const sec=newSection.value;
-  const name=newName.value;
-  const price=+newPrice.value;
-  if(!name||!price)return;
-  const max=Math.max(0,...items.filter(i=>i.section===sec).map(i=>i.order));
-  items.push({id:uid++,section:sec,name,price,qty:0,order:max+1});
-  newName.value="";newPrice.value="";
-  render();
-}
-function render(){
-  let total=0;
-  let summary=`Like STar nail\n服務明細\n\n`;
-  ["basic","addon","remove"].forEach(sec=>{
-    const box=document.getElementById(sec);
-    const title=box.querySelector("h2").innerText;
-    box.innerHTML=`<h2>${title}</h2>`;
-    let text="";
-    sectionItems(sec).forEach(i=>{
-      total+=i.price*i.qty;
-      if(i.qty>0)text+=`${i.name} × ${i.qty}　$${i.price*i.qty}\n`;
-      const d=document.createElement("div");
-      d.className="item";
-      d.innerHTML=`
-        <input value="${i.name}" onchange="items.find(x=>x.id===${i.id}).name=this.value;render()">
-        <input type="number" value="${i.price}" onchange="items.find(x=>x.id===${i.id}).price=+this.value;render()">
-        <div class="qty">
-          <button onclick="changeQty(${i.id},-1)">−</button>
-          ${i.qty}
-          <button onclick="changeQty(${i.id},1)">＋</button>
-        </div>
-        <button onclick="move(${i.id},-1)">⬆️</button>
-        <button onclick="move(${i.id},1)">⬇️</button>
-      `;
-      box.appendChild(d);
-    });
-    if(text)summary+=`【${title}】\n${text}\n`;
+
+function calculate() {
+  let total = 0;
+  let text = "Like STar nail 消費明細\n\n";
+
+  items.forEach((item, i) => {
+    if (qty[i] > 0) {
+      const sub = item[1] * qty[i];
+      total += sub;
+      text += `${item[0]} × ${qty[i]}  $${sub}\n`;
+    }
   });
-  totalSpan.innerText=total;
-  summaryBox.innerText=summary+`合計金額：$${total}`;
+
+  const dep = parseInt(document.getElementById("deposit").value);
+  if (dep > 0) {
+    total -= dep;
+    text += `\n已扣訂金：-$${dep}\n`;
+  }
+
+  const note = document.getElementById("note").value.trim();
+  if (note) {
+    text += `\n備註：\n${note}\n`;
+  }
+
+  text += `\n應付金額：$${total}`;
+
+  document.getElementById("detail").innerText = text;
+  document.getElementById("total").innerText = "$" + total;
 }
-const totalSpan=document.getElementById("total");
-const summaryBox=document.getElementById("summary");
-render();
+
+function sendLine() {
+  calculate();
+  const msg = document.getElementById("detail").innerText;
+  window.open("https://line.me/R/msg/text/?" + encodeURIComponent(msg));
+}
 </script>
 
 </body>
