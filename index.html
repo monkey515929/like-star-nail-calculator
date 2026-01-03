@@ -3,52 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <title>Like STar nail｜美甲計算機</title>
-
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
-body {
-  font-family: -apple-system, BlinkMacSystemFont;
+body{
+  font-family:-apple-system,BlinkMacSystemFont;
   background:#f6f4f2;
   padding:20px;
-  color:#333;
 }
-h1 {
-  text-align:center;
-  font-weight:600;
-}
-.section {
+h1{text-align:center}
+.section{
   background:#fff;
   border-radius:14px;
   padding:15px;
   margin-bottom:20px;
 }
-.section h2 {
-  font-size:16px;
-  margin-bottom:10px;
-}
-.item {
+.section h2{font-size:16px}
+.item{
   display:flex;
   gap:6px;
   margin-bottom:6px;
 }
-.item input {
+.item input{
   flex:1;
   padding:6px;
 }
-.item button {
-  background:#ddd;
+.item button{
   border:none;
   border-radius:6px;
 }
-.total {
+.total{
   font-size:18px;
   text-align:right;
 }
-textarea {
-  width:100%;
-  height:80px;
-}
+textarea{width:100%;height:80px}
 </style>
 </head>
 
@@ -57,13 +45,13 @@ textarea {
 <h1>Like STar nail</h1>
 
 <div class="section">
-<h2>基本款 / 單色</h2>
+<h2>基本款 / 套餐</h2>
 <div id="basic"></div>
 <button onclick="addItem('basic')">＋新增項目</button>
 </div>
 
 <div class="section">
-<h2>加價單指 / 設計</h2>
+<h2>加價單指</h2>
 <div id="design"></div>
 <button onclick="addItem('design')">＋新增項目</button>
 </div>
@@ -92,64 +80,70 @@ textarea {
 </div>
 
 <script>
-const sections = ['basic','design','remove'];
-let discount = 0;
-let deposit = 0;
-
+let deposit=0,discount=0;
+const sections=['basic','design','remove'];
 sections.forEach(id=>{
-  new Sortable(document.getElementById(id), {
-    animation:150
-  });
+  new Sortable(document.getElementById(id),{animation:150});
 });
 
-function addItem(section){
-  const div = document.createElement('div');
-  div.className='item';
-  div.innerHTML = `
-    <input placeholder="項目名稱">
-    <input type="number" placeholder="價格" oninput="calc()">
+function addItem(section,name='',price=0){
+  const d=document.createElement('div');
+  d.className='item';
+  d.innerHTML=`
+    <input value="${name}">
+    <input type="number" value="${price}" oninput="calc()">
     <input type="number" value="1" min="1" oninput="calc()">
     <button onclick="this.parentNode.remove();calc()">✕</button>
   `;
-  document.getElementById(section).appendChild(div);
+  document.getElementById(section).appendChild(d);
 }
 
 function calc(){
-  let sum = 0;
+  let sum=0;
   document.querySelectorAll('.item').forEach(i=>{
-    const price = i.children[1].value || 0;
-    const qty = i.children[2].value || 1;
-    sum += price * qty;
+    sum+= (i.children[1].value||0)*(i.children[2].value||1);
   });
-  document.getElementById('total').innerText = sum - discount - deposit;
+  document.getElementById('total').innerText=sum-discount-deposit;
 }
 
-function applyDeposit(val){
-  deposit = val;
-  calc();
-}
-
+function applyDeposit(v){deposit=v;calc()}
 function applyDiscount(){
-  const first = document.querySelector('#basic .item input[type=number]');
-  discount = first ? first.value : 0;
+  const first=document.querySelector('#basic .item input[type=number]');
+  discount=first?first.value:0;
   calc();
 }
 
 function copyLine(){
-  let text = 'Like STar nail 美甲明細\n';
+  let t='Like STar nail 美甲明細\n';
   document.querySelectorAll('.item').forEach(i=>{
-    const name=i.children[0].value;
-    const price=i.children[1].value;
-    const qty=i.children[2].value;
-    if(name) text+=`${name} x${qty} $${price*qty}\n`;
+    if(i.children[0].value)
+      t+=`${i.children[0].value} x${i.children[2].value} $${i.children[1].value*i.children[2].value}\n`;
   });
-  text+=`訂金扣除：$${deposit}\n`;
-  text+=`折扣：$${discount}\n`;
-  text+=`總金額：$${document.getElementById('total').innerText}\n`;
-  text+=`備註：${document.getElementById('note').value}`;
-  navigator.clipboard.writeText(text);
+  t+=`訂金扣除：$${deposit}\n`;
+  t+=`折扣：$${discount}\n`;
+  t+=`總金額：$${document.getElementById('total').innerText}\n`;
+  t+=`備註：${note.value}`;
+  navigator.clipboard.writeText(t);
   alert('已複製，可直接貼 LINE');
 }
+
+/* 預設項目 */
+addItem('basic','單色凝膠（跳色+100/色）',800);
+addItem('basic','貓眼（跳色+100/色）',1000);
+addItem('basic','貓眼特殊吸法（玻璃珠、追光、法式等）',1200);
+addItem('basic','鏡面、亮片、漸層、法式（足部+200）',1200);
+
+addItem('design','鏡面',120);
+addItem('design','手繪',50);
+addItem('design','量染',100);
+addItem('design','立體造型、異材質',100);
+addItem('design','配飾、鑽飾',50);
+addItem('design','延甲',100);
+
+addItem('remove','本店卸甲續作、純卸',300);
+addItem('remove','他店卸甲續作',400);
+addItem('remove','他店純卸',500);
+addItem('remove','純卸＋基礎保養',800);
 </script>
 
 </body>
