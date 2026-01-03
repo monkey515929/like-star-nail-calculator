@@ -60,7 +60,13 @@ pre{
   flex-wrap:wrap;
   margin-top:8px;
 }
-select{background:#111;color:#fff;border:1px solid #555;border-radius:6px;padding:4px;}
+select{
+  background:#111;
+  color:#fff;
+  border:1px solid #555;
+  border-radius:6px;
+  padding:4px;
+}
 </style>
 </head>
 <body>
@@ -95,16 +101,33 @@ select{background:#111;color:#fff;border:1px solid #555;border-radius:6px;paddin
 
 <script>
 let items=[
-  {id:1,section:"basic",name:"單色凝膠（10指）",price:1200,qty:0,order:1},
-  {id:2,section:"addon",name:"手繪（單指）",price:100,qty:0,order:1},
-  {id:3,section:"remove",name:"他店卸甲",price:300,qty:0,order:1}
-];
-let uid=4;
+  // 基礎款式
+  {id:1,section:"basic",name:"單色凝膠（跳色+100/色）",price:800,qty:0,order:1},
+  {id:2,section:"basic",name:"貓眼（跳色+100/色）",price:1000,qty:0,order:2},
+  {id:3,section:"basic",name:"貓眼特殊吸法（玻璃珠、追光、法式等）",price:1200,qty:0,order:3},
+  {id:4,section:"basic",name:"鏡面／亮片／漸層／法式",price:1200,qty:0,order:4},
+  {id:5,section:"basic",name:"足部加成",price:200,qty:0,order:5},
 
+  // 單指加價
+  {id:6,section:"addon",name:"鏡面（單指）",price:120,qty:0,order:1},
+  {id:7,section:"addon",name:"手繪（單指）",price:50,qty:0,order:2},
+  {id:8,section:"addon",name:"暈染（單指）",price:100,qty:0,order:3},
+  {id:9,section:"addon",name:"立體造型／異材質（單指）",price:100,qty:0,order:4},
+  {id:10,section:"addon",name:"配飾／鑽飾（單指）",price:50,qty:0,order:5},
+  {id:11,section:"addon",name:"延甲（單指）",price:100,qty:0,order:6},
+
+  // 卸甲
+  {id:12,section:"remove",name:"本店卸甲續作／純卸",price:300,qty:0,order:1},
+  {id:13,section:"remove",name:"他店卸甲續作",price:400,qty:0,order:2},
+  {id:14,section:"remove",name:"他店純卸",price:500,qty:0,order:3},
+  {id:15,section:"remove",name:"純卸＋基礎保養",price:800,qty:0,order:4}
+];
+let uid=16;
+
+/* 以下邏輯與前一版一致（可調數量／順序／新增） */
 function sectionItems(sec){
   return items.filter(i=>i.section===sec).sort((a,b)=>a.order-b.order);
 }
-
 function move(id,dir){
   const item=items.find(i=>i.id===id);
   const swap=items.find(i=>i.section===item.section && i.order===item.order+dir);
@@ -112,29 +135,24 @@ function move(id,dir){
   [item.order,swap.order]=[swap.order,item.order];
   render();
 }
-
 function changeQty(id,delta){
   const item=items.find(i=>i.id===id);
   item.qty=Math.max(0,item.qty+delta);
   render();
 }
-
 function addItem(){
-  const sec=document.getElementById("newSection").value;
-  const name=document.getElementById("newName").value;
-  const price=+document.getElementById("newPrice").value;
+  const sec=newSection.value;
+  const name=newName.value;
+  const price=+newPrice.value;
   if(!name||!price)return;
-  const maxOrder=Math.max(0,...items.filter(i=>i.section===sec).map(i=>i.order));
-  items.push({id:uid++,section:sec,name,price,qty:0,order:maxOrder+1});
-  document.getElementById("newName").value="";
-  document.getElementById("newPrice").value="";
+  const max=Math.max(0,...items.filter(i=>i.section===sec).map(i=>i.order));
+  items.push({id:uid++,section:sec,name,price,qty:0,order:max+1});
+  newName.value="";newPrice.value="";
   render();
 }
-
 function render(){
   let total=0;
   let summary=`Like STar nail\n服務明細\n\n`;
-
   ["basic","addon","remove"].forEach(sec=>{
     const box=document.getElementById(sec);
     const title=box.querySelector("h2").innerText;
@@ -160,11 +178,11 @@ function render(){
     });
     if(text)summary+=`【${title}】\n${text}\n`;
   });
-
-  document.getElementById("total").innerText=total;
-  document.getElementById("summary").innerText=summary+`合計金額：$${total}`;
+  totalSpan.innerText=total;
+  summaryBox.innerText=summary+`合計金額：$${total}`;
 }
-
+const totalSpan=document.getElementById("total");
+const summaryBox=document.getElementById("summary");
 render();
 </script>
 
