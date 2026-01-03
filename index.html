@@ -1,51 +1,40 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<title>Like STar Nail 計算機</title>
+<meta charset="UTF-8">
+<title>Like STar Nail</title>
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f7f7f7;
-  padding: 20px;
+  background:#f6f6f6;
+  padding:20px;
 }
-h1 { text-align: center; }
-
-button {
-  padding: 6px 10px;
-  margin: 2px;
-}
-
+h1,h2 { text-align:center; }
 .card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 15px;
-  margin-bottom: 16px;
+  background:#fff;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:20px;
 }
-
 .item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 6px 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:6px 0;
 }
-
-.qty button {
-  width: 28px;
+.qty button { width:28px; }
+.section-title {
+  font-weight:600;
+  margin-top:12px;
+  border-bottom:1px solid #ddd;
+  padding-bottom:4px;
 }
-
 textarea {
-  width: 100%;
-  height: 220px;
+  width:100%;
+  height:230px;
 }
-
-.drag {
-  cursor: grab;
-  opacity: 0.9;
-}
-.dragging {
-  opacity: 0.4;
-}
+.drag { cursor:grab; }
+.dragging { opacity:0.4; }
 </style>
 </head>
 
@@ -53,11 +42,7 @@ textarea {
 
 <h1>Like STar Nail</h1>
 
-<!-- 前台 -->
-<div class="card">
-  <h3>服務項目</h3>
-  <div id="frontItems"></div>
-</div>
+<div id="front"></div>
 
 <div class="card">
   <label>訂金：</label>
@@ -75,136 +60,141 @@ textarea {
 </div>
 
 <div class="card">
-  <button onclick="openBackend()">進入後台</button>
+  <button onclick="location.hash='#backend';renderBackend()">進入後台</button>
+</div>
+
+<!-- 後台 -->
+<div id="backend" class="card">
+  <h2>後台價目表管理</h2>
+  <div id="backendBox"></div>
+  <button onclick="addItem()">＋ 新增項目</button>
+  <br><br>
+  <button onclick="location.href='index.html'">回前台</button>
 </div>
 
 <script>
-let items = JSON.parse(localStorage.getItem("items")) || [
-  { name: "單色凝膠", price: 800, qty: 0 },
-  { name: "鏡面(單指)", price: 120, qty: 0 },
-  { name: "立體造型/異材質(單指)", price: 100, qty: 0 },
-  { name: "延甲(單指)", price: 100, qty: 0 }
+let data = JSON.parse(localStorage.getItem("nailData")) || [
+  { section:"基本款", name:"單色凝膠", price:800, qty:0 },
+  { section:"基本款", name:"貓眼", price:900, qty:0 },
+  { section:"基本款", name:"法式", price:1000, qty:0 },
+
+  { section:"加價單指", name:"鏡面(單指)", price:120, qty:0 },
+  { section:"加價單指", name:"暈染/線條(單指)", price:120, qty:0 },
+  { section:"加價單指", name:"立體造型/異材質(單指)", price:100, qty:0 },
+
+  { section:"延甲", name:"延甲(單指)", price:100, qty:0 },
+
+  { section:"卸甲", name:"本店卸甲", price:0, qty:0 },
+  { section:"卸甲", name:"他店卸甲", price:300, qty:0 },
+
+  { section:"基礎保養", name:"基礎保養", price:600, qty:0 }
 ];
 
-function save() {
-  localStorage.setItem("items", JSON.stringify(items));
-}
+function save(){ localStorage.setItem("nailData",JSON.stringify(data)); }
 
-function renderFront() {
-  const box = document.getElementById("frontItems");
-  box.innerHTML = "";
-  items.forEach((it, i) => {
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `
-      <span>${it.name} $${it.price}</span>
-      <div class="qty">
-        <button onclick="changeQty(${i},-1)">-</button>
-        ${it.qty}
-        <button onclick="changeQty(${i},1)">+</button>
-      </div>
-    `;
-    box.appendChild(div);
+function renderFront(){
+  const box=document.getElementById("front");
+  box.innerHTML="";
+  const sections=[...new Set(data.map(d=>d.section))];
+
+  sections.forEach(sec=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`<div class="section-title">${sec}</div>`;
+    data.filter(d=>d.section===sec).forEach((it,i)=>{
+      const idx=data.indexOf(it);
+      card.innerHTML+=`
+        <div class="item">
+          <span>${it.name} $${it.price}</span>
+          <div class="qty">
+            <button onclick="chg(${idx},-1)">-</button>
+            ${it.qty}
+            <button onclick="chg(${idx},1)">+</button>
+          </div>
+        </div>`;
+    });
+    box.appendChild(card);
   });
   updateSummary();
 }
 
-function changeQty(i, n) {
-  items[i].qty = Math.max(0, items[i].qty + n);
-  save();
-  renderFront();
+function chg(i,n){
+  data[i].qty=Math.max(0,data[i].qty+n);
+  save();renderFront();
 }
 
-function updateSummary() {
-  let total = 0;
-  let lines = [];
-  items.forEach(it => {
-    if (it.qty > 0) {
-      const sum = it.qty * it.price;
-      total += sum;
-      lines.push(`${it.name} x${it.qty} : $${sum}`);
+function updateSummary(){
+  let lines=[],total=0;
+  const sections=[...new Set(data.map(d=>d.section))];
+  sections.forEach(sec=>{
+    const items=data.filter(d=>d.section===sec && d.qty>0);
+    if(items.length){
+      items.forEach(it=>{
+        const s=it.qty*it.price;
+        total+=s;
+        lines.push(`${it.name} x${it.qty} : $${s}`);
+      });
     }
   });
-
-  const deposit = Number(document.getElementById("deposit").value);
-  const pay = total - deposit;
-
-  document.getElementById("summary").value =
+  const dep=Number(deposit.value);
+  summary.value=
 `✨ Like STar Nail 結帳明細 ✨
 --------------------------
 ${lines.join("\n")}
 --------------------------
 總計金額: $${total}
-已付定金: -$${deposit}
-現場應付: $${pay}
+已付定金: -$${dep}
+現場應付: $${total-dep}
 --------------------------
 期待下次為您服務！`;
 }
 
-document.getElementById("deposit").onchange = updateSummary;
+deposit.onchange=updateSummary;
 
-function copySummary() {
-  navigator.clipboard.writeText(document.getElementById("summary").value);
+function copySummary(){
+  navigator.clipboard.writeText(summary.value);
   alert("已複製明細");
 }
 
-function openBackend() {
-  window.location.href = "#backend";
-  renderBackend();
-}
-</script>
-
-<!-- 後台 -->
-<div id="backend" class="card">
-  <h3>後台管理（可拖曳排序）</h3>
-  <div id="backendItems"></div>
-  <button onclick="location.href='index.html'">回前台</button>
-</div>
-
-<script>
-function renderBackend() {
-  const box = document.getElementById("backendItems");
-  box.innerHTML = "";
-
-  items.forEach((it, i) => {
-    const div = document.createElement("div");
-    div.className = "item drag";
-    div.draggable = true;
-    div.innerHTML = `
-      ☰ 
-      <input value="${it.name}" onchange="items[${i}].name=this.value;save();renderFront()">
-      <input type="number" value="${it.price}" style="width:80px"
-        onchange="items[${i}].price=Number(this.value);save();renderFront()">
+/* 後台 */
+function renderBackend(){
+  const box=document.getElementById("backendBox");
+  box.innerHTML="";
+  data.forEach((it,i)=>{
+    const div=document.createElement("div");
+    div.className="item drag";
+    div.draggable=true;
+    div.innerHTML=`
+      <input value="${it.section}" style="width:90px"
+        onchange="data[${i}].section=this.value;save();renderFront()">
+      <input value="${it.name}"
+        onchange="data[${i}].name=this.value;save();renderFront()">
+      <input type="number" value="${it.price}" style="width:70px"
+        onchange="data[${i}].price=Number(this.value);save();renderFront()">
     `;
-
-    div.addEventListener("dragstart", e => {
+    div.ondragstart=e=>{
       div.classList.add("dragging");
-      e.dataTransfer.setData("text/plain", i);
-    });
-
-    div.addEventListener("dragend", () => {
-      div.classList.remove("dragging");
-    });
-
-    div.addEventListener("dragover", e => e.preventDefault());
-
-    div.addEventListener("drop", e => {
-      e.preventDefault();
-      const from = Number(e.dataTransfer.getData("text/plain"));
-      const temp = items[from];
-      items.splice(from, 1);
-      items.splice(i, 0, temp);
-      save();
-      renderBackend();
-      renderFront();
-    });
-
+      e.dataTransfer.setData("i",i);
+    };
+    div.ondragend=()=>div.classList.remove("dragging");
+    div.ondragover=e=>e.preventDefault();
+    div.ondrop=e=>{
+      const from=e.dataTransfer.getData("i");
+      const temp=data[from];
+      data.splice(from,1);
+      data.splice(i,0,temp);
+      save();renderBackend();renderFront();
+    };
     box.appendChild(div);
   });
 }
 
+function addItem(){
+  data.push({section:"新區塊",name:"新項目",price:0,qty:0});
+  save();renderBackend();renderFront();
+}
+
 renderFront();
 </script>
-
 </body>
 </html>
