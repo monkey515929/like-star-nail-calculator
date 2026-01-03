@@ -1,245 +1,210 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Like STar Nail</title>
+<meta charset="UTF-8" />
+<title>Like STar Nail 計算機</title>
 <style>
-body{
-  font-family:-apple-system,BlinkMacSystemFont;
-  background:#f4f4f4;
-  margin:0;padding:16px;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f7f7f7;
+  padding: 20px;
 }
-h1,h2{margin:12px 0;}
-.section{
-  background:#fff;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:18px;
+h1 { text-align: center; }
+
+button {
+  padding: 6px 10px;
+  margin: 2px;
 }
-.item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:6px 0;
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 16px;
 }
-.ctrl{
-  display:flex;
-  align-items:center;
-  gap:10px;
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0;
 }
-.ctrl button{
-  width:30px;height:30px;
-  border:none;border-radius:50%;
-  background:#111;color:#fff;
-  font-size:18px;
+
+.qty button {
+  width: 28px;
 }
-textarea{
-  width:100%;
-  min-height:220px;
-  font-size:14px;
+
+textarea {
+  width: 100%;
+  height: 220px;
 }
-.admin-item{
-  display:flex;
-  gap:6px;
-  margin:6px 0;
-  align-items:center;
+
+.drag {
+  cursor: grab;
+  opacity: 0.9;
 }
-.admin-item input{
-  flex:1;
-}
-.drag{
-  cursor:grab;
-  padding:0 6px;
-  font-size:18px;
-  user-select:none;
-}
-.hidden{display:none;}
-.copy-btn{
-  width:100%;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#000;
-  color:#fff;
-  font-size:16px;
-  margin-bottom:10px;
-}
-.admin-item.dragging{
-  opacity:0.4;
+.dragging {
+  opacity: 0.4;
 }
 </style>
 </head>
+
 <body>
 
 <h1>Like STar Nail</h1>
 
-<button onclick="toggleAdmin()">切換 前台 / 後台</button>
+<!-- 前台 -->
+<div class="card">
+  <h3>服務項目</h3>
+  <div id="frontItems"></div>
+</div>
 
-<div id="front"></div>
+<div class="card">
+  <label>訂金：</label>
+  <select id="deposit">
+    <option value="0">無</option>
+    <option value="500">500</option>
+    <option value="1000">1000</option>
+  </select>
+</div>
 
-<h2>✨ 給客人的明細</h2>
-<button class="copy-btn" onclick="copyReceipt()">📋 一鍵複製明細</button>
-<textarea id="receipt" readonly></textarea>
+<div class="card">
+  <h3>結帳明細</h3>
+  <textarea id="summary" readonly></textarea>
+  <button onclick="copySummary()">一鍵複製明細</button>
+</div>
 
-<div id="admin" class="hidden">
-  <h2>🔒 後台設定（可拖移順序）</h2>
-  <div id="adminList"></div>
-  <button onclick="addItem()">＋ 新增項目</button>
+<div class="card">
+  <button onclick="openBackend()">進入後台</button>
 </div>
 
 <script>
-const STORAGE_KEY='like_star_nail_final';
-
-let items = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
-
-  {cat:'基礎款', name:'基礎保養', price:600, qty:0},
-  {cat:'基礎款', name:'單色凝膠', price:800, qty:0},
-  {cat:'基礎款', name:'貓眼', price:1000, qty:0},
-  {cat:'基礎款', name:'貓眼特殊吸法', price:1200, qty:0},
-  {cat:'基礎款', name:'鏡面 / 亮片 / 漸層 / 法式', price:1200, qty:0},
-  {cat:'基礎款', name:'足部加成', price:200, qty:0},
-
-  {cat:'加價單指', name:'鏡面（單指）', price:120, qty:0},
-  {cat:'加價單指', name:'手繪（單指）', price:50, qty:0},
-  {cat:'加價單指', name:'暈染（單指）', price:100, qty:0},
-  {cat:'加價單指', name:'立體造型 / 異材質（單指）', price:100, qty:0},
-  {cat:'加價單指', name:'配飾 / 鑽飾（單指）', price:50, qty:0},
-  {cat:'加價單指', name:'延甲（單指）', price:100, qty:0},
-
-  {cat:'卸甲', name:'本店卸甲續作 / 純卸', price:300, qty:0},
-  {cat:'卸甲', name:'他店卸甲續作', price:400, qty:0},
-  {cat:'卸甲', name:'他店純卸', price:500, qty:0},
-  {cat:'卸甲', name:'純卸 + 基礎保養', price:800, qty:0},
-
-  {cat:'扣除', name:'訂金500', price:-500, qty:0},
-  {cat:'扣除', name:'訂金1000', price:-1000, qty:0}
+let items = JSON.parse(localStorage.getItem("items")) || [
+  { name: "單色凝膠", price: 800, qty: 0 },
+  { name: "鏡面(單指)", price: 120, qty: 0 },
+  { name: "立體造型/異材質(單指)", price: 100, qty: 0 },
+  { name: "延甲(單指)", price: 100, qty: 0 }
 ];
 
-let dragIndex = null;
-
-function save(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function save() {
+  localStorage.setItem("items", JSON.stringify(items));
 }
 
-function renderFront(){
-  const front=document.getElementById('front');
-  front.innerHTML='';
-  [...new Set(items.map(i=>i.cat))].forEach(cat=>{
-    const sec=document.createElement('div');
-    sec.className='section';
-    sec.innerHTML=`<h2>${cat}</h2>`;
-    items.filter(i=>i.cat===cat).forEach(i=>{
-      const row=document.createElement('div');
-      row.className='item';
-      row.innerHTML=`
-        <div>${i.name} $${i.price}</div>
-        <div class="ctrl">
-          <button onclick="qty('${i.name}',-1)">−</button>
-          <div>${i.qty}</div>
-          <button onclick="qty('${i.name}',1)">＋</button>
-        </div>`;
-      sec.appendChild(row);
-    });
-    front.appendChild(sec);
+function renderFront() {
+  const box = document.getElementById("frontItems");
+  box.innerHTML = "";
+  items.forEach((it, i) => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <span>${it.name} $${it.price}</span>
+      <div class="qty">
+        <button onclick="changeQty(${i},-1)">-</button>
+        ${it.qty}
+        <button onclick="changeQty(${i},1)">+</button>
+      </div>
+    `;
+    box.appendChild(div);
   });
+  updateSummary();
 }
 
-function qty(name,d){
-  const it=items.find(i=>i.name===name);
-  it.qty=Math.max(0,it.qty+d);
-  save(); render();
+function changeQty(i, n) {
+  items[i].qty = Math.max(0, items[i].qty + n);
+  save();
+  renderFront();
 }
 
-function renderReceipt(){
-  let lines=[], total=0, deposit=0;
-  items.forEach(i=>{
-    if(i.qty>0){
-      const sum=i.price*i.qty;
-      if(i.price<0) deposit+=sum;
-      else total+=sum;
-      lines.push(`${i.name} x${i.qty} : $${sum}`);
+function updateSummary() {
+  let total = 0;
+  let lines = [];
+  items.forEach(it => {
+    if (it.qty > 0) {
+      const sum = it.qty * it.price;
+      total += sum;
+      lines.push(`${it.name} x${it.qty} : $${sum}`);
     }
   });
 
-  document.getElementById('receipt').value =
+  const deposit = Number(document.getElementById("deposit").value);
+  const pay = total - deposit;
+
+  document.getElementById("summary").value =
 `✨ Like STar Nail 結帳明細 ✨
 --------------------------
-${lines.join('\n')}
+${lines.join("\n")}
 --------------------------
 總計金額: $${total}
-已付定金: ${deposit}
-現場應付: $${total+deposit}
+已付定金: -$${deposit}
+現場應付: $${pay}
 --------------------------
 期待下次為您服務！`;
 }
 
-function copyReceipt(){
-  navigator.clipboard.writeText(
-    document.getElementById('receipt').value
-  ).then(()=>alert('明細已複製，可直接貼給客人'));
+document.getElementById("deposit").onchange = updateSummary;
+
+function copySummary() {
+  navigator.clipboard.writeText(document.getElementById("summary").value);
+  alert("已複製明細");
 }
 
-function renderAdmin(){
-  const list=document.getElementById('adminList');
-  list.innerHTML='';
+function openBackend() {
+  window.location.href = "#backend";
+  renderBackend();
+}
+</script>
 
-  items.forEach((i,idx)=>{
-    const row=document.createElement('div');
-    row.className='admin-item';
-    row.draggable=true;
-    row.dataset.index=idx;
+<!-- 後台 -->
+<div id="backend" class="card">
+  <h3>後台管理（可拖曳排序）</h3>
+  <div id="backendItems"></div>
+  <button onclick="location.href='index.html'">回前台</button>
+</div>
 
-    row.innerHTML=`
-      <span class="drag">☰</span>
-      <input value="${i.name}" onchange="items[${idx}].name=this.value;save();render()">
-      <input type="number" value="${i.price}" onchange="items[${idx}].price=+this.value;save();render()">
-      <input value="${i.cat}" onchange="items[${idx}].cat=this.value;save();render()">
+<script>
+function renderBackend() {
+  const box = document.getElementById("backendItems");
+  box.innerHTML = "";
+
+  items.forEach((it, i) => {
+    const div = document.createElement("div");
+    div.className = "item drag";
+    div.draggable = true;
+    div.innerHTML = `
+      ☰ 
+      <input value="${it.name}" onchange="items[${i}].name=this.value;save();renderFront()">
+      <input type="number" value="${it.price}" style="width:80px"
+        onchange="items[${i}].price=Number(this.value);save();renderFront()">
     `;
 
-    row.addEventListener('dragstart',e=>{
-      dragIndex = idx;
-      row.classList.add('dragging');
+    div.addEventListener("dragstart", e => {
+      div.classList.add("dragging");
+      e.dataTransfer.setData("text/plain", i);
     });
 
-    row.addEventListener('dragend',e=>{
-      row.classList.remove('dragging');
+    div.addEventListener("dragend", () => {
+      div.classList.remove("dragging");
     });
 
-    row.addEventListener('dragover',e=>{
+    div.addEventListener("dragover", e => e.preventDefault());
+
+    div.addEventListener("drop", e => {
       e.preventDefault();
+      const from = Number(e.dataTransfer.getData("text/plain"));
+      const temp = items[from];
+      items.splice(from, 1);
+      items.splice(i, 0, temp);
+      save();
+      renderBackend();
+      renderFront();
     });
 
-    row.addEventListener('drop',e=>{
-      e.preventDefault();
-      const targetIndex = +row.dataset.index;
-      if (dragIndex === null || dragIndex === targetIndex) return;
-      const moved = items.splice(dragIndex,1)[0];
-      items.splice(targetIndex,0,moved);
-      dragIndex = null;
-      save(); render();
-    });
-
-    list.appendChild(row);
+    box.appendChild(div);
   });
 }
 
-function addItem(){
-  items.push({cat:'自訂', name:'新項目', price:0, qty:0});
-  save(); render();
-}
-
-function toggleAdmin(){
-  document.getElementById('admin').classList.toggle('hidden');
-}
-
-function render(){
-  renderFront();
-  renderAdmin();
-  renderReceipt();
-}
-
-render();
+renderFront();
 </script>
+
 </body>
 </html>
