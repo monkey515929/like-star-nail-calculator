@@ -7,54 +7,48 @@
 <style>
 body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #fafafa;
-  padding: 16px;
+  background:#f6f6f6;
+  padding:16px;
 }
-h2 { margin-top: 24px; }
+h1,h2 { margin:12px 0; }
 .section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:16px;
 }
 .item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:8px 0;
 }
 .controls button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: #000;
-  color: #fff;
-  font-size: 18px;
+  width:32px;height:32px;
+  border:none;border-radius:50%;
+  background:#000;color:#fff;
+  font-size:18px;
 }
 .controls span {
-  margin: 0 8px;
-  min-width: 24px;
-  text-align: center;
+  margin:0 10px;
+  min-width:20px;
+  text-align:center;
 }
 textarea {
-  width: 100%;
-  height: 80px;
+  width:100%;
+  height:220px;
+  font-size:14px;
 }
-pre {
-  background: #111;
-  color: #fff;
-  padding: 12px;
-  border-radius: 12px;
-  white-space: pre-wrap;
+.admin-item {
+  display:flex;
+  gap:6px;
+  margin:6px 0;
 }
-.admin {
-  background: #f0f0f0;
-  padding: 12px;
-  border-radius: 12px;
+.admin-item input, .admin-item select {
+  flex:1;
 }
-.admin input {
-  width: 45%;
+.drag {
+  cursor:grab;
 }
 </style>
 </head>
@@ -62,88 +56,113 @@ pre {
 
 <h1>Like STar Nail</h1>
 
-<div id="app"></div>
+<div id="front"></div>
 
-<h2>✨ 給客人的明細</h2>
-<pre id="receipt"></pre>
+<h2>✨ 給客人的明細（可複製）</h2>
+<textarea id="receipt" readonly></textarea>
 
-<h2>✍ 備註 / 傳 LINE</h2>
+<h2>✍ 備註</h2>
 <textarea id="note"></textarea>
 
 <h2>🔒 後台設定</h2>
-<div class="admin">
-  <button onclick="addItem()">＋ 新增項目</button>
-</div>
+<div class="section" id="admin"></div>
+<button onclick="addItem()">＋ 新增項目</button>
 
 <script>
-let items = [
-  {cat:'基本單色', name:'單色凝膠', price:800, qty:0},
-  {cat:'加價單指', name:'鏡面(單指)', price:120, qty:0},
-  {cat:'加價單指', name:'立體造型/異材質(單指)', price:100, qty:0},
-  {cat:'延甲', name:'延甲(單指)', price:100, qty:0},
-  {cat:'卸甲', name:'卸甲(他店)', price:500, qty:0},
-  {cat:'扣除', name:'訂金500', price:-500, qty:0},
-  {cat:'扣除', name:'訂金1000', price:-1000, qty:0},
+const KEY = 'like_star_nail_items';
+
+let items = JSON.parse(localStorage.getItem(KEY)) || [
+  {cat:'基本單色',name:'單色凝膠',price:800,qty:0},
+  {cat:'加價單指',name:'鏡面(單指)',price:120,qty:0},
+  {cat:'加價單指',name:'立體造型/異材質(單指)',price:100,qty:0},
+  {cat:'延甲',name:'延甲(單指)',price:100,qty:0},
+  {cat:'卸甲',name:'卸甲(他店)',price:500,qty:0},
+  {cat:'扣除',name:'訂金500',price:-500,qty:0},
+  {cat:'扣除',name:'訂金1000',price:-1000,qty:0}
 ];
 
-function render() {
-  const app = document.getElementById('app');
-  app.innerHTML = '';
-  let cats = [...new Set(items.map(i=>i.cat))];
-  cats.forEach(cat=>{
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(items));
+}
+
+function renderFront() {
+  const front = document.getElementById('front');
+  front.innerHTML = '';
+  [...new Set(items.map(i=>i.cat))].forEach(cat=>{
     let sec = document.createElement('div');
     sec.className = 'section';
     sec.innerHTML = `<h2>${cat}</h2>`;
     items.filter(i=>i.cat===cat).forEach(i=>{
       let row = document.createElement('div');
-      row.className = 'item';
-      row.innerHTML = `
+      row.className='item';
+      row.innerHTML=`
         <div>${i.name} $${i.price}</div>
         <div class="controls">
-          <button onclick="i.qty--; if(i.qty<0)i.qty=0; render()">−</button>
+          <button onclick="changeQty('${i.name}',-1)">−</button>
           <span>${i.qty}</span>
-          <button onclick="i.qty++; render()">＋</button>
-        </div>
-      `;
+          <button onclick="changeQty('${i.name}',1)">＋</button>
+        </div>`;
       sec.appendChild(row);
     });
-    app.appendChild(sec);
+    front.appendChild(sec);
   });
-  updateReceipt();
 }
 
-function updateReceipt() {
-  let lines = [];
-  let total = 0;
+function changeQty(name,delta){
+  let it = items.find(i=>i.name===name);
+  it.qty = Math.max(0,it.qty+delta);
+  save(); render();
+}
+
+function renderReceipt(){
+  let lines=[], total=0, deposit=0;
   items.forEach(i=>{
     if(i.qty>0){
-      let sum = i.price * i.qty;
-      total += sum;
+      let sum=i.price*i.qty;
+      if(i.price<0) deposit+=sum;
+      else total+=sum;
       lines.push(`${i.name} x${i.qty} : $${sum}`);
     }
   });
-  let deposit = items.filter(i=>i.price<0 && i.qty>0)
-                     .reduce((s,i)=>s+i.price*i.qty,0);
-  let final = total + deposit;
-  document.getElementById('receipt').textContent =
+  document.getElementById('receipt').value =
 `✨ Like STar Nail 結帳明細 ✨
 --------------------------
 ${lines.join('\n')}
 --------------------------
 總計金額: $${total}
 已付定金: $${deposit}
-現場應付: $${final}
+現場應付: $${total+deposit}
 --------------------------
 期待下次為您服務！`;
 }
 
+function renderAdmin(){
+  const a=document.getElementById('admin');
+  a.innerHTML='';
+  items.forEach((i,idx)=>{
+    let row=document.createElement('div');
+    row.className='admin-item';
+    row.innerHTML=`
+      <span class="drag">☰</span>
+      <input value="${i.name}" onchange="i.name=this.value;save();render()">
+      <input type="number" value="${i.price}" onchange="i.price=+this.value;save();render()">
+      <input value="${i.cat}" onchange="i.cat=this.value;save();render()">`;
+    a.appendChild(row);
+  });
+}
+
 function addItem(){
-  items.push({cat:'自訂', name:'新項目', price:0, qty:0});
-  render();
+  items.push({cat:'自訂',name:'新項目',price:0,qty:0});
+  save(); render();
+}
+
+function render(){
+  renderFront();
+  renderAdmin();
+  renderReceipt();
 }
 
 render();
 </script>
-
 </body>
 </html>
