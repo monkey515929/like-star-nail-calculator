@@ -1,68 +1,54 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>Like STar nail 計算機</title>
+<title>Like STar nail｜美甲計算機</title>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
 <style>
-body{
-  background:#0f0f0f;
-  color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;
+body {
+  font-family: -apple-system, BlinkMacSystemFont;
+  background:#f6f4f2;
   padding:20px;
+  color:#333;
 }
-h1{text-align:center;font-weight:500;}
-.section{
-  background:#1a1a1a;
-  padding:15px;
+h1 {
+  text-align:center;
+  font-weight:600;
+}
+.section {
+  background:#fff;
   border-radius:14px;
-  margin-bottom:18px;
+  padding:15px;
+  margin-bottom:20px;
 }
-.section h3{
-  border-left:4px solid #cfae70;
-  padding-left:8px;
+.section h2 {
+  font-size:16px;
   margin-bottom:10px;
 }
-.item{
+.item {
   display:flex;
-  align-items:center;
   gap:6px;
-  margin-bottom:8px;
+  margin-bottom:6px;
 }
-.item span.name{flex:1}
-button{
-  background:#cfae70;
-  color:#000;
-  border:none;
-  border-radius:6px;
-  padding:4px 8px;
-}
-.qty{width:26px;text-align:center;}
-select,textarea,input{
-  width:100%;
-  border-radius:6px;
+.item input {
+  flex:1;
   padding:6px;
+}
+.item button {
+  background:#ddd;
   border:none;
+  border-radius:6px;
 }
-pre{white-space:pre-wrap;line-height:1.6;}
-
-.admin-item{
-  background:#111;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:8px;
-  touch-action:none;
+.total {
+  font-size:18px;
+  text-align:right;
 }
-.admin-item.dragging{
-  opacity:.5;
-  background:#222;
+textarea {
+  width:100%;
+  height:80px;
 }
-.admin-item .row{
-  display:flex;
-  gap:6px;
-  align-items:center;
-}
-.small{font-size:13px;opacity:.7}
 </style>
 </head>
 
@@ -70,130 +56,100 @@ pre{white-space:pre-wrap;line-height:1.6;}
 
 <h1>Like STar nail</h1>
 
-<div id="app"></div>
-
 <div class="section">
-  <h3>訂金</h3>
-  <select id="deposit" onchange="render()">
-    <option value="0">未收訂金</option>
-    <option value="500">已收訂金 $500</option>
-    <option value="1000">已收訂金 $1000</option>
-  </select>
+<h2>基本款 / 單色</h2>
+<div id="basic"></div>
+<button onclick="addItem('basic')">＋新增項目</button>
 </div>
 
 <div class="section">
-  <h3>備註（給客人）</h3>
-  <textarea id="note"></textarea>
+<h2>加價單指 / 設計</h2>
+<div id="design"></div>
+<button onclick="addItem('design')">＋新增項目</button>
 </div>
 
 <div class="section">
-  <h3>明細</h3>
-  <pre id="detail"></pre>
-  <button onclick="sendLine()">傳 LINE 給客人</button>
+<h2>卸甲</h2>
+<div id="remove"></div>
+<button onclick="addItem('remove')">＋新增項目</button>
 </div>
 
 <div class="section">
-  <h3>後台管理（長按拖移排序）</h3>
+<h2>調整</h2>
+<button onclick="applyDeposit(500)">扣訂金 500</button>
+<button onclick="applyDeposit(1000)">扣訂金 1000</button>
+<button onclick="applyDiscount()">扣除基本單色</button>
+</div>
 
-  <input id="newName" placeholder="項目名稱">
-  <input id="newPrice" type="number" placeholder="金額（扣除請填負數）">
-  <select id="newGroup">
-    <option>基礎款</option>
-    <option>單指加價</option>
-    <option>卸甲</option>
-    <option>扣除項目</option>
-  </select>
-  <button onclick="addItem()">新增項目</button>
+<div class="section">
+<h2>備註 / 傳 LINE 給客人</h2>
+<textarea id="note"></textarea>
+<button onclick="copyLine()">複製明細</button>
+</div>
 
-  <div id="adminList"></div>
+<div class="section total">
+總金額：$<span id="total">0</span>
 </div>
 
 <script>
-let items=[
-  {name:"單色凝膠",price:800,group:"基礎款",qty:0},
-  {name:"貓眼",price:1000,group:"基礎款",qty:0},
-  {name:"貓眼特殊吸法",price:1200,group:"基礎款",qty:0},
-  {name:"鏡面／亮片／漸層／法式",price:1200,group:"基礎款",qty:0},
-  {name:"手繪",price:100,group:"單指加價",qty:0},
-  {name:"暈染",price:100,group:"單指加價",qty:0},
-  {name:"立體造型／異材質",price:100,group:"單指加價",qty:0},
-  {name:"延甲",price:100,group:"單指加價",qty:0},
-  {name:"本店卸甲續作",price:300,group:"卸甲",qty:0},
-  {name:"他店卸甲續作",price:400,group:"卸甲",qty:0},
-  {name:"扣除基本單色",price:-800,group:"扣除項目",qty:0}
-];
+const sections = ['basic','design','remove'];
+let discount = 0;
+let deposit = 0;
 
-let dragIndex=null;
-
-function render(){
-  app.innerHTML="";
-  adminList.innerHTML="";
-  let total=0;
-  let text="Like STar nail 消費明細\n\n";
-
-  ["基礎款","單指加價","卸甲","扣除項目"].forEach(g=>{
-    app.innerHTML+=`<div class="section"><h3>${g}</h3></div>`;
-    const sec=app.lastChild;
-
-    items.filter(i=>i.group===g).forEach(i=>{
-      sec.innerHTML+=`
-      <div class="item">
-        <span class="name">${i.name} (${i.price>0?"$"+i.price:"-$"+Math.abs(i.price)})</span>
-        <button onclick="chg('${i.name}',-1)">-</button>
-        <span class="qty">${i.qty}</span>
-        <button onclick="chg('${i.name}',1)">+</button>
-      </div>`;
-      if(i.qty>0){
-        total+=i.qty*i.price;
-        text+=`${i.name} × ${i.qty}  $${i.qty*i.price}\n`;
-      }
-    });
+sections.forEach(id=>{
+  new Sortable(document.getElementById(id), {
+    animation:150
   });
+});
 
-  if(+deposit.value){
-    total-=+deposit.value;
-    text+=`\n已扣訂金 -$${deposit.value}\n`;
-  }
-  if(note.value.trim()) text+=`\n備註：\n${note.value}\n`;
-  text+=`\n應付金額：$${total}`;
-  detail.innerText=text;
+function addItem(section){
+  const div = document.createElement('div');
+  div.className='item';
+  div.innerHTML = `
+    <input placeholder="項目名稱">
+    <input type="number" placeholder="價格" oninput="calc()">
+    <input type="number" value="1" min="1" oninput="calc()">
+    <button onclick="this.parentNode.remove();calc()">✕</button>
+  `;
+  document.getElementById(section).appendChild(div);
+}
 
-  items.forEach((i,idx)=>{
-    const el=document.createElement("div");
-    el.className="admin-item";
-    el.innerHTML=`
-      <div class="row">
-        <input value="${i.name}" onchange="i.name=this.value">
-        <input type="number" value="${i.price}" onchange="i.price=this.value">
-        <span class="small">${i.group}</span>
-      </div>`;
-    el.onpointerdown=()=>{dragIndex=idx;el.classList.add("dragging");}
-    el.onpointerup=()=>{dragIndex=null;el.classList.remove("dragging");}
-    el.onpointerenter=()=>{
-      if(dragIndex!==null && dragIndex!==idx){
-        items.splice(idx,0,items.splice(dragIndex,1)[0]);
-        dragIndex=idx;
-        render();
-      }
-    }
-    adminList.appendChild(el);
+function calc(){
+  let sum = 0;
+  document.querySelectorAll('.item').forEach(i=>{
+    const price = i.children[1].value || 0;
+    const qty = i.children[2].value || 1;
+    sum += price * qty;
   });
+  document.getElementById('total').innerText = sum - discount - deposit;
 }
 
-function chg(name,n){
-  const i=items.find(x=>x.name===name);
-  i.qty=Math.max(0,i.qty+n);
-  render();
+function applyDeposit(val){
+  deposit = val;
+  calc();
 }
-function addItem(){
-  items.push({name:newName.value,price:+newPrice.value,group:newGroup.value,qty:0});
-  newName.value=newPrice.value="";
-  render();
+
+function applyDiscount(){
+  const first = document.querySelector('#basic .item input[type=number]');
+  discount = first ? first.value : 0;
+  calc();
 }
-function sendLine(){
-  window.open("https://line.me/R/msg/text/?"+encodeURIComponent(detail.innerText));
+
+function copyLine(){
+  let text = 'Like STar nail 美甲明細\n';
+  document.querySelectorAll('.item').forEach(i=>{
+    const name=i.children[0].value;
+    const price=i.children[1].value;
+    const qty=i.children[2].value;
+    if(name) text+=`${name} x${qty} $${price*qty}\n`;
+  });
+  text+=`訂金扣除：$${deposit}\n`;
+  text+=`折扣：$${discount}\n`;
+  text+=`總金額：$${document.getElementById('total').innerText}\n`;
+  text+=`備註：${document.getElementById('note').value}`;
+  navigator.clipboard.writeText(text);
+  alert('已複製，可直接貼 LINE');
 }
-render();
 </script>
 
 </body>
