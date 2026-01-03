@@ -45,7 +45,14 @@ select,textarea,input{
   border:none;
 }
 pre{white-space:pre-wrap;line-height:1.6;}
-.admin input{margin-bottom:6px;}
+.admin-item{
+  background:#111;
+  padding:8px;
+  border-radius:8px;
+  margin-bottom:6px;
+  cursor:grab;
+}
+.admin-item.dragging{opacity:.4}
 .small{font-size:13px;opacity:.7}
 </style>
 </head>
@@ -76,16 +83,16 @@ pre{white-space:pre-wrap;line-height:1.6;}
   <button onclick="sendLine()">傳 LINE 給客人</button>
 </div>
 
-<div class="section admin">
-  <h3>後台管理（你自己用）</h3>
+<div class="section">
+  <h3>後台管理（拖移排序）</h3>
 
   <input id="newName" placeholder="項目名稱">
   <input id="newPrice" type="number" placeholder="金額（扣除請填負數）">
   <select id="newGroup">
-    <option value="基礎款">基礎款</option>
-    <option value="單指加價">單指加價</option>
-    <option value="卸甲">卸甲</option>
-    <option value="扣除項目">扣除項目</option>
+    <option>基礎款</option>
+    <option>單指加價</option>
+    <option>卸甲</option>
+    <option>扣除項目</option>
   </select>
   <button onclick="addItem()">新增項目</button>
 
@@ -93,7 +100,7 @@ pre{white-space:pre-wrap;line-height:1.6;}
 </div>
 
 <script>
-let items = [
+let items=[
   {name:"單色凝膠",price:800,group:"基礎款",qty:0},
   {name:"貓眼",price:1000,group:"基礎款",qty:0},
   {name:"貓眼特殊吸法",price:1200,group:"基礎款",qty:0},
@@ -122,13 +129,13 @@ function render(){
     app.innerHTML+=`<div class="section"><h3>${g}</h3></div>`;
     const sec=app.lastChild;
 
-    items.filter(i=>i.group===g).forEach((i,idx)=>{
+    items.filter(i=>i.group===g).forEach((i)=>{
       sec.innerHTML+=`
       <div class="item">
         <span class="name">${i.name} (${i.price>0?"$"+i.price:"-$"+Math.abs(i.price)})</span>
-        <button onclick="iQty(${idx},-1)">-</button>
+        <button onclick="chg('${i.name}',-1)">-</button>
         <span class="qty">${i.qty}</span>
-        <button onclick="iQty(${idx},1)">+</button>
+        <button onclick="chg('${i.name}',1)">+</button>
       </div>`;
       if(i.qty>0){
         total+=i.qty*i.price;
@@ -137,34 +144,31 @@ function render(){
     });
   });
 
-  const dep=parseInt(document.getElementById("deposit").value);
-  if(dep){
-    total-=dep;
-    text+=`\n已扣訂金 -$${dep}\n`;
-  }
+  const dep=+deposit.value;
+  if(dep){ total-=dep; text+=`\n已扣訂金 -$${dep}\n`; }
 
-  const note=document.getElementById("note").value.trim();
-  if(note) text+=`\n備註：\n${note}\n`;
-
+  if(note.value.trim()) text+=`\n備註：\n${note.value}\n`;
   text+=`\n應付金額：$${total}`;
-  document.getElementById("detail").innerText=text;
+  detail.innerText=text;
 
   items.forEach((i,idx)=>{
     admin.innerHTML+=`
-    <div class="item small">
+    <div class="admin-item" draggable="true" data-i="${idx}">
       <input value="${i.name}" onchange="i.name=this.value">
       <input type="number" value="${i.price}" onchange="i.price=this.value">
-      <button onclick="move(${idx},-1)">↑</button>
-      <button onclick="move(${idx},1)">↓</button>
-      <button onclick="del(${idx})">刪</button>
+      <span class="small">${i.group}</span>
     </div>`;
   });
+
+  dragInit();
 }
 
-function iQty(i,n){
-  items[i].qty=Math.max(0,items[i].qty+n);
+function chg(name,n){
+  const i=items.find(x=>x.name===name);
+  i.qty=Math.max(0,i.qty+n);
   render();
 }
+
 function addItem(){
   items.push({
     name:newName.value,
@@ -175,17 +179,25 @@ function addItem(){
   newName.value=newPrice.value="";
   render();
 }
-function del(i){items.splice(i,1);render();}
-function move(i,d){
-  const n=i+d;
-  if(n<0||n>=items.length)return;
-  [items[i],items[n]]=[items[n],items[i]];
-  render();
+
+function dragInit(){
+  let drag;
+  document.querySelectorAll(".admin-item").forEach(el=>{
+    el.ondragstart=()=>{drag=el;el.classList.add("dragging");}
+    el.ondragend=()=>el.classList.remove("dragging");
+    el.ondragover=e=>e.preventDefault();
+    el.ondrop=()=>{
+      const a=+drag.dataset.i,b=+el.dataset.i;
+      items.splice(b,0,items.splice(a,1)[0]);
+      render();
+    }
+  });
 }
+
 function sendLine(){
-  const msg=document.getElementById("detail").innerText;
-  window.open("https://line.me/R/msg/text/?"+encodeURIComponent(msg));
+  window.open("https://line.me/R/msg/text/?"+encodeURIComponent(detail.innerText));
 }
+
 render();
 </script>
 
