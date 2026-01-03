@@ -3,161 +3,144 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Like STar Nail 美甲計算機</title>
-
+<title>Like STar Nail 結帳</title>
 <style>
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   background: #fafafa;
-  padding: 20px;
-  color: #222;
+  padding: 16px;
 }
-h1 {
-  text-align: center;
-}
+h2 { margin-top: 24px; }
 .section {
   background: #fff;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,.05);
+  padding: 12px;
+  margin-bottom: 16px;
 }
 .item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin: 8px 0;
 }
-.item button {
-  padding: 4px 10px;
-  border-radius: 6px;
+.controls button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   border: none;
   background: #000;
   color: #fff;
+  font-size: 18px;
 }
-.total {
-  font-weight: bold;
-  margin-top: 10px;
+.controls span {
+  margin: 0 8px;
+  min-width: 24px;
+  text-align: center;
 }
 textarea {
   width: 100%;
-  height: 220px;
-  font-size: 14px;
-  line-height: 1.6;
+  height: 80px;
 }
-input {
-  width: 100%;
-  padding: 6px;
-  margin-top: 6px;
+pre {
+  background: #111;
+  color: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  white-space: pre-wrap;
 }
-.small {
-  font-size: 12px;
-  color: #777;
+.admin {
+  background: #f0f0f0;
+  padding: 12px;
+  border-radius: 12px;
+}
+.admin input {
+  width: 45%;
 }
 </style>
 </head>
-
 <body>
 
 <h1>Like STar Nail</h1>
 
-<!-- 前台 -->
-<div class="section">
-  <h3>前台｜直接操作</h3>
-  <div id="frontItems"></div>
+<div id="app"></div>
 
-  <div class="total">
-    總計：$<span id="total">0</span>
-  </div>
+<h2>✨ 給客人的明細</h2>
+<pre id="receipt"></pre>
 
-  <div style="margin-top:10px">
-    已付定金
-    <input type="number" id="deposit" value="0">
-  </div>
-</div>
+<h2>✍ 備註 / 傳 LINE</h2>
+<textarea id="note"></textarea>
 
-<!-- 明細 -->
-<div class="section">
-  <h3>給客人的結帳明細</h3>
-  <textarea id="receipt" readonly></textarea>
-</div>
-
-<!-- 後台 -->
-<div class="section">
-  <h3>後台｜項目管理</h3>
-  <div class="small">（僅調整名稱與價格，不影響前台操作）</div>
-  <div id="adminItems"></div>
+<h2>🔒 後台設定</h2>
+<div class="admin">
+  <button onclick="addItem()">＋ 新增項目</button>
 </div>
 
 <script>
 let items = [
-  { name: "單色凝膠", price: 800, qty: 0 },
-  { name: "鏡面(單指)", price: 120, qty: 0 },
-  { name: "立體造型/異材質(單指)", price: 100, qty: 0 },
-  { name: "延甲(單指)", price: 100, qty: 0 },
-  { name: "基礎保養", price: 600, qty: 0 }
+  {cat:'基本單色', name:'單色凝膠', price:800, qty:0},
+  {cat:'加價單指', name:'鏡面(單指)', price:120, qty:0},
+  {cat:'加價單指', name:'立體造型/異材質(單指)', price:100, qty:0},
+  {cat:'延甲', name:'延甲(單指)', price:100, qty:0},
+  {cat:'卸甲', name:'卸甲(他店)', price:500, qty:0},
+  {cat:'扣除', name:'訂金500', price:-500, qty:0},
+  {cat:'扣除', name:'訂金1000', price:-1000, qty:0},
 ];
 
 function render() {
-  const front = document.getElementById("frontItems");
-  const admin = document.getElementById("adminItems");
-  front.innerHTML = "";
-  admin.innerHTML = "";
-
-  let total = 0;
-
-  items.forEach((item, i) => {
-    total += item.price * item.qty;
-
-    // 前台
-    front.innerHTML += `
-      <div class="item">
-        <div>${item.name} $${item.price}</div>
-        <div>
-          x ${item.qty}
-          <button onclick="items[${i}].qty++; render()">+1</button>
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  let cats = [...new Set(items.map(i=>i.cat))];
+  cats.forEach(cat=>{
+    let sec = document.createElement('div');
+    sec.className = 'section';
+    sec.innerHTML = `<h2>${cat}</h2>`;
+    items.filter(i=>i.cat===cat).forEach(i=>{
+      let row = document.createElement('div');
+      row.className = 'item';
+      row.innerHTML = `
+        <div>${i.name} $${i.price}</div>
+        <div class="controls">
+          <button onclick="i.qty--; if(i.qty<0)i.qty=0; render()">−</button>
+          <span>${i.qty}</span>
+          <button onclick="i.qty++; render()">＋</button>
         </div>
-      </div>
-    `;
-
-    // 後台
-    admin.innerHTML += `
-      <div class="item">
-        <input value="${item.name}" 
-          onchange="items[${i}].name=this.value; render()">
-        <input type="number" value="${item.price}" 
-          onchange="items[${i}].price=Number(this.value); render()">
-      </div>
-    `;
+      `;
+      sec.appendChild(row);
+    });
+    app.appendChild(sec);
   });
-
-  document.getElementById("total").innerText = total;
-  generateReceipt(total);
+  updateReceipt();
 }
 
-function generateReceipt(total) {
-  const deposit = Number(document.getElementById("deposit").value);
-  let text = `✨ Like STar Nail 結帳明細 ✨
---------------------------
-`;
-
-  items.forEach(item => {
-    if (item.qty > 0) {
-      text += `${item.name} x${item.qty} : $${item.price * item.qty}\n`;
+function updateReceipt() {
+  let lines = [];
+  let total = 0;
+  items.forEach(i=>{
+    if(i.qty>0){
+      let sum = i.price * i.qty;
+      total += sum;
+      lines.push(`${i.name} x${i.qty} : $${sum}`);
     }
   });
-
-  text += `--------------------------
+  let deposit = items.filter(i=>i.price<0 && i.qty>0)
+                     .reduce((s,i)=>s+i.price*i.qty,0);
+  let final = total + deposit;
+  document.getElementById('receipt').textContent =
+`✨ Like STar Nail 結帳明細 ✨
+--------------------------
+${lines.join('\n')}
+--------------------------
 總計金額: $${total}
-已付定金: -$${deposit}
-現場應付: $${total - deposit}
+已付定金: $${deposit}
+現場應付: $${final}
 --------------------------
 期待下次為您服務！`;
-
-  document.getElementById("receipt").value = text;
 }
 
-document.getElementById("deposit").addEventListener("input", render);
+function addItem(){
+  items.push({cat:'自訂', name:'新項目', price:0, qty:0});
+  render();
+}
 
 render();
 </script>
